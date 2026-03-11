@@ -6,9 +6,9 @@ import * as schema from "./schema";
 // Required for Neon serverless driver (used by Supabase connection pooler)
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set. Check your Supabase project settings.");
-}
+const connectionString = process.env.DATABASE_URL || "";
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Pool and db are lazy — queries will fail at runtime if DATABASE_URL is missing,
+// but this allows the build to succeed without a connection string.
+export const pool = new Pool({ connectionString });
 export const db = drizzle({ client: pool, schema });

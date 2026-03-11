@@ -1,0 +1,145 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronRight, MapPin } from "lucide-react";
+import { LinkButton } from "@/components/link-button";
+import { BoatCard } from "@/components/boat-card";
+import { getStateBySlug, getCitiesByState } from "@/lib/db/queries/states";
+import { getBoatsByState } from "@/lib/db/queries/boats";
+import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-pages";
+import { formatImageUrl } from "@/lib/utils";
+import { ContentBlockRenderer } from "@/components/content-blocks";
+import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
+
+interface Props {
+  params: Promise<{ stateSlug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { stateSlug } = await params;
+  const destPage = await getDestinationPageByStateSlug(stateSlug);
+  if (!destPage) {
+    const state = await getStateBySlug(stateSlug);
+    if (!state) return { title: "State Not Found" };
+    return {
+      title: `Party Boat Fishing in ${state.name}`,
+      description: `Find the best party boat fishing charters in ${state.name}. Browse boats, compare prices, and book your trip.`,
+    };
+  }
+
+  return {
+    title: destPage.seoTitle || `Party Boat Fishing in ${destPage.state.name}`,
+    description: destPage.seoDescription || `Find the best party boat fishing charters in ${destPage.state.name}.`,
+    openGraph: {
+      images: destPage.heroImageUrl ? [formatImageUrl(destPage.heroImageUrl)] : undefined,
+    },
+  };
+}
+
+export default async function StatePage({ params }: Props) {
+  const { stateSlug } = await params;
+  const state = await getStateBySlug(stateSlug);
+  if (!state) notFound();
+
+  const [destPage, boatData, cities] = await Promise.all([
+    getDestinationPageByStateSlug(stateSlug),
+    getBoatsByState(state.code, 1, 50),
+    getCitiesByState(state.code),
+  ]);
+
+  const heroImage = destPage?.heroImageUrl;
+
+  return (
+    <>
+      {/* Breadcrumbs */}
+      <div className="bg-gray-50 border-b">
+        <div className="container mx-auto px-4 py-3">
+          <nav className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-primary">Home</Link>
+            <ChevronRight className="h-3 w-3" />
+            <Link href="/destinations" className="hover:text-primary">Destinations</Link>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-foreground font-medium">{state.name}</span>
+          </nav>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <section className="relative bg-primary text-white py-16">
+        {heroImage && (
+          <Image
+            src={formatImageUrl(heroImage)}
+            alt={`Fishing in ${state.name}`}
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
+        <div className="absolute inset-0 bg-primary/70" />
+        <div className="relative container mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-5xl font-display font-bold mb-3">
+            {destPage?.heroHeadline || `Party Boat Fishing in ${state.name}`}
+          </h1>
+          <p className="text-blue-100 text-lg max-w-2xl mx-auto">
+            {destPage?.heroSubheadline ||
+              `Discover ${boatData.total} party boat charters in ${state.name}`}
+          </p>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Content Blocks */}
+        {destPage?.blocks && destPage.blocks.length > 0 && (
+          <div className="mb-12 space-y-8">
+            {destPage.blocks.map((block) => (
+              <ContentBlockRenderer key={block.id} block={block} />
+            ))}
+          </div>
+        )}
+
+        {/* Popular Cities */}
+        {cities.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-display font-bold mb-4">
+              Popular Cities in {state.name}
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {cities.map((city) => (
+                <LinkButton key={city.id} href={`/locations/${city.slug}`} variant="outline" size="sm" className="gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {city.name}
+                </LinkButton>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Boat Listings */}
+        <section>
+          <h2 className="text-2xl font-display font-bold mb-6">
+            Party Boats in {state.name}
+            <span className="text-muted-foreground font-normal text-lg ml-2">
+              ({boatData.total})
+            </span>
+          </h2>
+
+          {boatData.boats.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {boatData.boats.map((boat) => (
+                <BoatCard key={boat.id} boat={boat} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No party boats listed in {state.name} yet. Check back soon!
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
+    </>
+  );
+}
