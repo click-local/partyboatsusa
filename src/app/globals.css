@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Primary Blue: Strong, Trustworthy */
+  --color-primary: hsl(210 100% 26%); /* #004685 Deep Blue */
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  /* Secondary */
+  --color-secondary: hsl(210 20% 96%);
+  --color-secondary-foreground: hsl(210 100% 26%);
+
+  /* Backgrounds */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(210 20% 20%); /* #29333D Dark Gray */
+
+  /* Cards */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(210 20% 20%);
+
+  /* Borders */
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(210 100% 26%);
+
+  /* UI Elements */
+  --color-muted: hsl(210 20% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
+
+  --color-accent: hsl(210 20% 96%);
+  --color-accent-foreground: hsl(210 100% 26%);
+
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(210 20% 20%);
+
+  /* Fonts */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
+
+  /* Charts */
+  --color-chart-1: hsl(210 100% 26%);
+  --color-chart-2: hsl(173 58% 39%);
+  --color-chart-3: hsl(197 37% 24%);
+  --color-chart-4: hsl(43 74% 66%);
+  --color-chart-5: hsl(27 87% 67%);
+
+  /* Sidebar */
+  --color-sidebar: hsl(0 0% 98%);
+  --color-sidebar-foreground: hsl(240 5.3% 26.1%);
+  --color-sidebar-primary: hsl(240 5.9% 10%);
+  --color-sidebar-primary-foreground: hsl(0 0% 98%);
+  --color-sidebar-accent: hsl(240 4.8% 95.9%);
+  --color-sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --color-sidebar-border: hsl(220 13% 91%);
+  --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-gray-50 text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold tracking-tight;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Card shadow utilities */
+.shadow-card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
 }

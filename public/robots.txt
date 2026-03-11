@@ -1,0 +1,95 @@
+# Party Boats USA - Robots.txt
+# Allow search engines and AI crawlers to index public pages
+
+# Default rules for all crawlers
+User-agent: *
+Allow: /
+
+# Block all admin pages
+Disallow: /admin/
+Disallow: /admin/*
+
+# Block all operator pages
+Disallow: /operator/
+Disallow: /operator/*
+
+# Google Search
+User-agent: Googlebot
+Allow: /
+
+# Bing Search
+User-agent: Bingbot
+Allow: /
+
+# OpenAI GPTBot - Allow for AI training and ChatGPT
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Anthropic Claude
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Google Bard / Gemini
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Amazon / Alexa
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Apple / Siri
+User-agent: Applebot
+Allow: /
+Disallow: /admin/
+Disallow: /operator/
+
+# Common SEO tools
+User-agent: AhrefsBot
+Allow: /
+
+User-agent: SemrushBot
+Allow: /
+
+# Sitemap location
+Sitemap: https://partyboatsusa.com/sitemap.xml
