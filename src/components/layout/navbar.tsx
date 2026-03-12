@@ -16,20 +16,26 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function Navbar() {
+export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-32">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <Anchor className="h-6 w-6 text-primary" />
-            <span className="font-display font-bold text-lg text-primary">
-              Party Boats USA
-            </span>
+            {logoUrl ? (
+              <img src={logoUrl} alt="Party Boats USA" className="h-28 w-auto" />
+            ) : (
+              <>
+                <Anchor className="h-6 w-6 text-primary" />
+                <span className="font-display font-bold text-lg text-primary">
+                  Party Boats USA
+                </span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation */}
@@ -47,6 +53,12 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/operator/login"
+              className="ml-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+            >
+              Captain&apos;s Portal
+            </Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -77,6 +89,13 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/operator/login"
+              onClick={() => setMobileOpen(false)}
+              className="mt-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary text-white text-center hover:bg-primary/90"
+            >
+              Captain&apos;s Portal
+            </Link>
           </nav>
         </div>
       )}

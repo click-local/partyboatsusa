@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,21 +17,18 @@ import {
 import { BoatCard } from "@/components/boat-card";
 import type { SelectBoat } from "@/lib/db/schema";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
-  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
-  "VA","WA","WV","WI","WY",
-];
+interface StateOption { code: string; name: string; }
+interface AmenityOption { id: number; name: string; slug: string; }
 
 const SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "rating", label: "Top Rated" },
+  { value: "featured", label: "Most Popular" },
   { value: "price-low", label: "Price: Low to High" },
   { value: "price-high", label: "Price: High to Low" },
-  { value: "name", label: "Name" },
-  { value: "capacity", label: "Capacity" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "capacity", label: "Largest Capacity" },
 ];
+
+const RATING_STEPS = [0, 1, 2, 3, 3.5, 4, 4.5, 5];
 
 interface SearchResult {
   boats: SelectBoat[];
@@ -48,10 +45,29 @@ function SearchPageContent() {
   const [selectedStates, setSelectedStates] = useState<string[]>(
     searchParams.get("states")?.split(",").filter(Boolean) || []
   );
+  const [selectedAmenities, setSelectedAmenities] = useState<number[]>(
+    searchParams.get("amenities")?.split(",").filter(Boolean).map(Number) || []
+  );
+  const [minRating, setMinRating] = useState(Number(searchParams.get("minRating")) || 0);
   const [sort, setSort] = useState(searchParams.get("sort") || "featured");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Load filter options from API
+  const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
+  const [amenityOptions, setAmenityOptions] = useState<AmenityOption[]>([]);
+
+  useEffect(() => {
+    // Fetch states and amenities that have listings
+    fetch("/api/boats/search?limit=0&meta=filters")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.states) setStateOptions(data.states);
+        if (data.amenities) setAmenityOptions(data.amenities);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchBoats = useCallback(async () => {
     setLoading(true);
@@ -59,13 +75,22 @@ function SearchPageContent() {
       const params = new URLSearchParams();
       if (query) params.set("q", query);
       if (selectedStates.length) params.set("states", selectedStates.join(","));
+      if (selectedAmenities.length) params.set("amenities", selectedAmenities.join(","));
       params.set("sort", sort);
       params.set("page", String(page));
       params.set("limit", "18");
 
       const res = await fetch(`/api/boats/search?${params.toString()}`);
       if (res.ok) {
-        const data = await res.json();
+        let data = await res.json();
+        // Client-side rating filter
+        if (minRating > 0 && data.boats) {
+          data = {
+            ...data,
+            boats: data.boats.filter((b: SelectBoat) => Number(b.rating) >= minRating),
+            total: data.boats.filter((b: SelectBoat) => Number(b.rating) >= minRating).length,
+          };
+        }
         setResults(data);
       }
     } catch (err) {
@@ -73,7 +98,7 @@ function SearchPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [query, selectedStates, sort, page]);
+  }, [query, selectedStates, selectedAmenities, sort, page, minRating]);
 
   useEffect(() => {
     fetchBoats();
@@ -84,11 +109,13 @@ function SearchPageContent() {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (selectedStates.length) params.set("states", selectedStates.join(","));
+    if (selectedAmenities.length) params.set("amenities", selectedAmenities.join(","));
     if (sort !== "featured") params.set("sort", sort);
     if (page > 1) params.set("page", String(page));
+    if (minRating > 0) params.set("minRating", String(minRating));
     const qs = params.toString();
     router.replace(`/search${qs ? `?${qs}` : ""}`, { scroll: false });
-  }, [query, selectedStates, sort, page, router]);
+  }, [query, selectedStates, selectedAmenities, sort, page, minRating, router]);
 
   const toggleState = (code: string) => {
     setSelectedStates((prev) =>
@@ -97,32 +124,92 @@ function SearchPageContent() {
     setPage(1);
   };
 
+  const toggleAmenity = (id: number) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+    );
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setQuery("");
     setSelectedStates([]);
+    setSelectedAmenities([]);
+    setMinRating(0);
     setSort("featured");
     setPage(1);
   };
 
-  const activeFilterCount = selectedStates.length + (query ? 1 : 0);
+  const activeFilterCount = selectedStates.length + selectedAmenities.length + (query ? 1 : 0) + (minRating > 0 ? 1 : 0);
 
   const FilterSidebar = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* State Filter */}
       <div>
-        <h3 className="font-semibold mb-3">State</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">State</h3>
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {US_STATES.map((code) => (
-            <label key={code} className="flex items-center gap-2 cursor-pointer">
+          {stateOptions.map((s) => (
+            <label key={s.code} className="flex items-center gap-2 cursor-pointer">
               <Checkbox
-                checked={selectedStates.includes(code)}
-                onCheckedChange={() => toggleState(code)}
+                checked={selectedStates.includes(s.code)}
+                onCheckedChange={() => toggleState(s.code)}
               />
-              <span className="text-sm">{code}</span>
+              <span className="text-sm font-medium">{s.name}</span>
             </label>
           ))}
         </div>
       </div>
+
+      {/* Amenities Filter */}
+      {amenityOptions.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Amenities</h3>
+          <div className="space-y-2">
+            {amenityOptions.map((a) => (
+              <label key={a.id} className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={selectedAmenities.includes(a.id)}
+                  onCheckedChange={() => toggleAmenity(a.id)}
+                />
+                <span className="text-sm font-medium">{a.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Minimum Rating */}
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Minimum Rating</h3>
+        <div className="px-1">
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.5}
+            value={minRating}
+            onChange={(e) => { setMinRating(Number(e.target.value)); setPage(1); }}
+            className="w-full accent-primary"
+          />
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm text-muted-foreground">
+              {minRating > 0 ? (
+                <span className="flex items-center gap-1">
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  {minRating}+ stars
+                </span>
+              ) : "Any"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Reset */}
+      {activeFilterCount > 0 && (
+        <Button variant="outline" className="w-full" onClick={clearFilters}>
+          Reset Filters
+        </Button>
+      )}
     </div>
   );
 
@@ -131,11 +218,11 @@ function SearchPageContent() {
       {/* Search Header */}
       <div className="bg-primary text-white py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-display font-bold mb-4">
+          <h1 className="text-3xl font-display font-bold mb-4 text-center">
             Browse Party Boats
           </h1>
-          <div className="flex gap-2 max-w-2xl">
-            <div className="relative flex-1">
+          <div className="flex justify-center">
+            <div className="relative w-full max-w-2xl">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by boat name, location, or operator..."
@@ -155,13 +242,13 @@ function SearchPageContent() {
         <div className="flex gap-8">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold">Filters</h2>
+            <div className="sticky top-24 bg-white rounded-lg border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-semibold text-lg">Filters</h2>
                 {activeFilterCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <button onClick={clearFilters} className="text-sm text-primary hover:underline">
                     Clear all
-                  </Button>
+                  </button>
                 )}
               </div>
               <FilterSidebar />
@@ -169,7 +256,7 @@ function SearchPageContent() {
           </aside>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
@@ -190,7 +277,7 @@ function SearchPageContent() {
                     <SheetHeader>
                       <SheetTitle>Filters</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-4">
+                    <div className="mt-4 overflow-y-auto">
                       <FilterSidebar />
                     </div>
                   </SheetContent>
@@ -219,7 +306,7 @@ function SearchPageContent() {
             </div>
 
             {/* Active filters */}
-            {selectedStates.length > 0 && (
+            {(selectedStates.length > 0 || selectedAmenities.length > 0) && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {selectedStates.map((code) => (
                   <Badge key={code} variant="secondary" className="gap-1">
@@ -230,6 +317,18 @@ function SearchPageContent() {
                     />
                   </Badge>
                 ))}
+                {selectedAmenities.map((id) => {
+                  const am = amenityOptions.find((a) => a.id === id);
+                  return (
+                    <Badge key={id} variant="secondary" className="gap-1">
+                      {am?.name || id}
+                      <X
+                        className="h-3 w-3 cursor-pointer"
+                        onClick={() => toggleAmenity(id)}
+                      />
+                    </Badge>
+                  );
+                })}
               </div>
             )}
 
@@ -258,7 +357,7 @@ function SearchPageContent() {
                       variant="outline"
                       size="sm"
                       disabled={page <= 1}
-                      onClick={() => setPage(page - 1)}
+                      onClick={() => { setPage(page - 1); window.scrollTo(0, 0); }}
                     >
                       <ChevronLeft className="h-4 w-4" />
                       Previous
@@ -270,7 +369,7 @@ function SearchPageContent() {
                       variant="outline"
                       size="sm"
                       disabled={page >= results.totalPages}
-                      onClick={() => setPage(page + 1)}
+                      onClick={() => { setPage(page + 1); window.scrollTo(0, 0); }}
                     >
                       Next
                       <ChevronRight className="h-4 w-4" />

@@ -4,7 +4,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
-  description: "Terms of use for Party Boats USA website.",
+  description:
+    "Review the terms and conditions for using Party Boats USA. Understand your responsibilities, our disclaimer, and policies on user-generated content.",
+  alternates: { canonical: "/terms-of-use" },
 };
 
 export default function TermsPage() {

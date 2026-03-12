@@ -1,0 +1,278 @@
+"use client";
+
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Anchor, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+export default function OperatorLoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const claimBoatId = searchParams.get("claimBoatId");
+
+  const [tab, setTab] = useState<"login" | "register">("login");
+  const [loading, setLoading] = useState(false);
+
+  // Login form
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Register form
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regCompanyName, setRegCompanyName] = useState("");
+  const [regContactName, setRegContactName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Login failed");
+        return;
+      }
+
+      toast.success("Welcome back!");
+      const redirect = claimBoatId
+        ? `/operator/dashboard?claimBoatId=${claimBoatId}`
+        : "/operator/dashboard";
+      window.location.href = redirect;
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: regEmail,
+          password: regPassword,
+          companyName: regCompanyName,
+          contactName: regContactName,
+          phone: regPhone || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Registration failed");
+        return;
+      }
+
+      toast.success("Account created! Welcome aboard!");
+      const redirect = claimBoatId
+        ? `/operator/dashboard?claimBoatId=${claimBoatId}`
+        : "/operator/dashboard";
+      window.location.href = redirect;
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <Anchor className="h-8 w-8 text-primary" />
+            <span className="font-display font-bold text-2xl text-primary">
+              Party Boats USA
+            </span>
+          </Link>
+          <p className="text-muted-foreground mt-2">Captain&apos;s Portal</p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+          {/* Tabs */}
+          <div className="flex mb-6 border-b border-border">
+            <button
+              onClick={() => setTab("login")}
+              className={`flex-1 pb-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === "login"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setTab("register")}
+              className={`flex-1 pb-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === "register"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
+
+          {tab === "login" ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-medium mb-1">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="login-password" className="block text-sm font-medium mb-1">
+                  Password
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Sign In
+              </button>
+              <div className="text-center">
+                <Link
+                  href="/operator/forgot-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label htmlFor="reg-company" className="block text-sm font-medium mb-1">
+                  Company Name
+                </label>
+                <input
+                  id="reg-company"
+                  type="text"
+                  required
+                  value={regCompanyName}
+                  onChange={(e) => setRegCompanyName(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="Your Charter Company"
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-contact" className="block text-sm font-medium mb-1">
+                  Contact Name
+                </label>
+                <input
+                  id="reg-contact"
+                  type="text"
+                  required
+                  value={regContactName}
+                  onChange={(e) => setRegContactName(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="Captain John"
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-email" className="block text-sm font-medium mb-1">
+                  Email
+                </label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  required
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-password" className="block text-sm font-medium mb-1">
+                  Password
+                </label>
+                <input
+                  id="reg-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-phone" className="block text-sm font-medium mb-1">
+                  Phone <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  id="reg-phone"
+                  type="tel"
+                  value={regPhone}
+                  onChange={(e) => setRegPhone(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Create Account
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          <Link href="/" className="hover:text-primary">
+            &larr; Back to Party Boats USA
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}

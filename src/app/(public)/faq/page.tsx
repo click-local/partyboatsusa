@@ -66,6 +66,7 @@ export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
     "Find answers to common questions about party boat fishing, booking trips, what to bring, and more.",
+  alternates: { canonical: "/faq" },
 };
 
 export default function FaqPage() {

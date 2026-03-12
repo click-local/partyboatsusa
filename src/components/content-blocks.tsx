@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LinkButton } from "@/components/link-button";
+import { BoatCard } from "@/components/boat-card";
 import { formatImageUrl } from "@/lib/utils";
-import type { SelectContentBlock } from "@/lib/db/schema";
+import type { SelectContentBlock, SelectBoat } from "@/lib/db/schema";
 
 interface ContentBlockProps {
   block: SelectContentBlock;
+  boats?: SelectBoat[];
 }
 
 interface TextBlockContent {
@@ -36,7 +38,30 @@ interface CtaBlockContent {
   buttonUrl?: string;
 }
 
-export function ContentBlockRenderer({ block }: ContentBlockProps) {
+interface BoatsBlockContent {
+  heading?: string;
+  limit?: number;
+  sortBy?: string;
+}
+
+function sortBoats(boats: SelectBoat[], sortBy: string): SelectBoat[] {
+  const sorted = [...boats];
+  switch (sortBy) {
+    case "price_low":
+      return sorted.sort((a, b) => Number(a.minPricePerPerson || 0) - Number(b.minPricePerPerson || 0));
+    case "price_high":
+      return sorted.sort((a, b) => Number(b.minPricePerPerson || 0) - Number(a.minPricePerPerson || 0));
+    case "name":
+      return sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    case "capacity":
+      return sorted.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
+    case "rating":
+    default:
+      return sorted.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+  }
+}
+
+export function ContentBlockRenderer({ block, boats }: ContentBlockProps) {
   const content = block.content as Record<string, unknown>;
 
   switch (block.blockType) {
@@ -139,6 +164,38 @@ export function ContentBlockRenderer({ block }: ContentBlockProps) {
             </LinkButton>
           )}
         </div>
+      );
+    }
+
+    case "boats": {
+      const data = content as BoatsBlockContent;
+      if (!boats || boats.length === 0) {
+        return (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No party boats listed yet. Check back soon!</p>
+          </div>
+        );
+      }
+      let displayBoats = sortBoats(boats, data.sortBy || "rating");
+      if (data.limit && data.limit > 0) {
+        displayBoats = displayBoats.slice(0, data.limit);
+      }
+      return (
+        <section>
+          {data.heading && (
+            <h2 className="text-2xl font-display font-bold mb-6">
+              {data.heading}
+              <span className="text-muted-foreground font-normal text-lg ml-2">
+                ({displayBoats.length})
+              </span>
+            </h2>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayBoats.map((boat) => (
+              <BoatCard key={boat.id} boat={boat} />
+            ))}
+          </div>
+        </section>
       );
     }
 

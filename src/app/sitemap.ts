@@ -1,30 +1,39 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { boats, states, cities } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { boats, states, cities, destinationPages } from "@/lib/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: SITE_URL, changeFrequency: "daily", priority: 1.0 },
-    { url: `${SITE_URL}/search`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${SITE_URL}/destinations`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/how-it-works`, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/brag-board`, changeFrequency: "daily", priority: 0.6 },
-    { url: `${SITE_URL}/terms-of-use`, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${SITE_URL}/privacy-policy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: SITE_URL, changeFrequency: "daily", priority: 1.0, lastModified: now },
+    { url: `${SITE_URL}/search`, changeFrequency: "daily", priority: 0.9, lastModified: now },
+    { url: `${SITE_URL}/destinations`, changeFrequency: "weekly", priority: 0.8, lastModified: now },
+    { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2025-01-01") },
+    { url: `${SITE_URL}/how-it-works`, changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2025-01-01") },
+    { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2025-01-01") },
+    { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2025-01-01") },
+    { url: `${SITE_URL}/brag-board`, changeFrequency: "daily", priority: 0.6, lastModified: now },
+    { url: `${SITE_URL}/terms-of-use`, changeFrequency: "yearly", priority: 0.2, lastModified: new Date("2025-01-01") },
+    { url: `${SITE_URL}/privacy-policy`, changeFrequency: "yearly", priority: 0.2, lastModified: new Date("2025-01-01") },
   ];
 
-  // Dynamic boat pages
+  // Dynamic boat pages — use most recent review/brag photo date as lastModified proxy
   let boatPages: MetadataRoute.Sitemap = [];
   try {
     const allBoats = await db
-      .select({ slug: boats.slug })
+      .select({
+        slug: boats.slug,
+        lastActivity: sql<Date>`GREATEST(
+          (SELECT MAX(created_at) FROM reviews WHERE reviews.boat_id = ${boats.id}),
+          (SELECT MAX(submitted_at) FROM brag_board_photos WHERE brag_board_photos.boat_id = ${boats.id}),
+          '2025-01-01'::timestamp
+        )`,
+      })
       .from(boats)
       .where(eq(boats.isPublished, true));
 
@@ -32,19 +41,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/boats/${boat.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.8,
+      lastModified: boat.lastActivity ? new Date(boat.lastActivity) : new Date("2025-01-01"),
     }));
   } catch {
     // DB not connected yet — skip dynamic pages
   }
 
-  // State pages
+  // State pages — use latest destination page update
   let statePages: MetadataRoute.Sitemap = [];
   try {
-    const allStates = await db.select({ slug: states.slug }).from(states);
+    const allStates = await db
+      .select({
+        slug: states.slug,
+      })
+      .from(states);
+
+    // Get the most recent destination page update for states
+    const latestDestUpdate = await db
+      .select({ updatedAt: destinationPages.updatedAt })
+      .from(destinationPages)
+      .where(eq(destinationPages.type, "state"))
+      .orderBy(desc(destinationPages.updatedAt))
+      .limit(1);
+
+    const stateLastMod = latestDestUpdate[0]?.updatedAt || new Date("2025-01-01");
+
     statePages = allStates.map((state) => ({
       url: `${SITE_URL}/states/${state.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.7,
+      lastModified: stateLastMod,
     }));
   } catch {
     // DB not connected yet
@@ -58,6 +84,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/locations/${city.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.6,
+      lastModified: new Date("2025-01-01"),
     }));
   } catch {
     // DB not connected yet

@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "How It Works",
   description:
     "Learn how Party Boats USA makes it easy to find, compare, and book party boat fishing trips across the United States.",
+  alternates: { canonical: "/how-it-works" },
 };
 
 const STEPS = [

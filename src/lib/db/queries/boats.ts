@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, amenities, tripTypes, operators, membershipTiers } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, amenities, tripTypes, operators, membershipTiers, reviews, bragBoardPhotos } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -97,8 +97,11 @@ export async function searchBoats(filters: SearchFilters) {
       orderBy = desc(boats.capacity);
       break;
     default:
-      // Featured: prioritize admin-featured, then featured, then by rating
-      orderBy = sql`${boats.isFeaturedAdmin} DESC, ${boats.isFeatured} DESC, ${boats.rating} DESC`;
+      // Admin-featured first, then ranked by 4+ star reviews + approved brag board photos, then rating
+      orderBy = sql`${boats.isFeaturedAdmin} DESC,
+        (SELECT count(*) FROM ${reviews} WHERE ${reviews.boatId} = ${boats.id} AND ${reviews.status} = 'approved' AND ${reviews.rating} >= 4)
+        + (SELECT count(*) FROM ${bragBoardPhotos} WHERE ${bragBoardPhotos.boatId} = ${boats.id} AND ${bragBoardPhotos.status} = 'approved')
+        DESC, ${boats.rating} DESC`;
   }
 
   const where = and(...conditions);
@@ -180,12 +183,24 @@ export async function getFeaturedBoats(limit = 9) {
     .from(boats)
     .where(eq(boats.isPublished, true))
     .orderBy(
-      sql`${boats.isFeaturedAdmin} DESC, ${boats.isFeatured} DESC, ${boats.rating} DESC`
+      sql`${boats.isFeaturedAdmin} DESC,
+        (SELECT count(*) FROM ${reviews} WHERE ${reviews.boatId} = ${boats.id} AND ${reviews.status} = 'approved' AND ${reviews.rating} >= 4)
+        + (SELECT count(*) FROM ${bragBoardPhotos} WHERE ${bragBoardPhotos.boatId} = ${boats.id} AND ${bragBoardPhotos.status} = 'approved')
+        DESC, ${boats.rating} DESC`
     )
     .limit(limit);
 }
 
 export async function getNearbyBoats(boatId: number, lat: string, lng: string, limit = 12) {
+  // Haversine distance in miles, capped at 100 miles
+  const latF = parseFloat(lat);
+  const lngF = parseFloat(lng);
+  const distanceSql = sql`3959 * acos(
+    cos(radians(${latF})) * cos(radians(${boats.latitude}::float))
+    * cos(radians(${boats.longitude}::float) - radians(${lngF}))
+    + sin(radians(${latF})) * sin(radians(${boats.latitude}::float))
+  )`;
+
   return db
     .select()
     .from(boats)
@@ -194,12 +209,11 @@ export async function getNearbyBoats(boatId: number, lat: string, lng: string, l
         eq(boats.isPublished, true),
         sql`${boats.id} != ${boatId}`,
         sql`${boats.latitude} IS NOT NULL`,
-        sql`${boats.longitude} IS NOT NULL`
+        sql`${boats.longitude} IS NOT NULL`,
+        sql`${distanceSql} <= 100`
       )
     )
-    .orderBy(
-      sql`(${boats.latitude}::float - ${parseFloat(lat)})^2 + (${boats.longitude}::float - ${parseFloat(lng)})^2`
-    )
+    .orderBy(distanceSql)
     .limit(limit);
 }
 

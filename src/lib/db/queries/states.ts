@@ -30,7 +30,12 @@ export async function getCities() {
 }
 
 export async function getCitiesByState(stateCode: string) {
-  return db.select().from(cities).where(eq(cities.stateCode, stateCode)).orderBy(cities.name);
+  return db
+    .selectDistinct({ id: cities.id, name: cities.name, slug: cities.slug, stateCode: cities.stateCode })
+    .from(cities)
+    .innerJoin(boats, sql`lower(${boats.cityName}) = lower(${cities.name}) AND ${boats.stateCode} = ${cities.stateCode}`)
+    .where(sql`${cities.stateCode} = ${stateCode} AND ${boats.isPublished} = true`)
+    .orderBy(cities.name);
 }
 
 export async function getCityBySlug(slug: string) {

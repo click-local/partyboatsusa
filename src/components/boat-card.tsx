@@ -1,9 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Users, MapPin } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { formatImageUrl, formatPrice } from "@/lib/utils";
+import { ArrowRight, MapPin, Users } from "lucide-react";
+import { formatImageUrl } from "@/lib/utils";
 import type { SelectBoat } from "@/lib/db/schema";
 
 interface BoatCardProps {
@@ -16,84 +14,64 @@ export function BoatCard({ boat }: BoatCardProps) {
   const hasRating = rating > 0;
 
   return (
-    <Link href={`/boats/${boat.slug}`}>
-      <Card className="group overflow-hidden hover:shadow-card-hover transition-all duration-300 h-full">
-        {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+    <Link
+      href={`/boats/${boat.slug}`}
+      className="group bg-white rounded-xl overflow-hidden shadow-sm border hover:shadow-md transition-shadow h-full flex flex-col"
+    >
+      <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+        {boat.primaryImageUrl ? (
           <Image
             src={imageUrl}
             alt={boat.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             style={{
               objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
             }}
           />
-          {/* Badges */}
-          <div className="absolute top-2 left-2 flex gap-1.5">
-            {boat.isFeaturedAdmin && (
-              <Badge className="bg-amber-500 text-white text-xs">Featured</Badge>
-            )}
-            {boat.isFeatured && !boat.isFeaturedAdmin && (
-              <Badge className="bg-primary text-white text-xs">Featured</Badge>
-            )}
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <MapPin className="h-10 w-10 text-primary/30" />
           </div>
+        )}
+        {(boat.isFeaturedAdmin || boat.isFeatured) && (
+          <span className="absolute top-3 left-3 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
+            Featured
+          </span>
+        )}
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+          <span className="text-white text-sm font-medium">
+            {boat.cityName}, {boat.stateCode}
+          </span>
         </div>
-
-        <CardContent className="p-4">
-          {/* Operator */}
-          <p className="text-xs text-muted-foreground mb-1 truncate">
-            {boat.operatorName}
-          </p>
-
-          {/* Boat Name */}
-          <h3 className="font-display font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-            {boat.name}
-          </h3>
-
-          {/* Location */}
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">
-              {boat.cityName}, {boat.stateCode}
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <p className="text-xs text-muted-foreground mb-1">{boat.operatorName}</p>
+        <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">
+          {boat.name}
+        </h3>
+        <div className="flex items-center justify-between mt-2">
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Users className="h-3.5 w-3.5" /> Up to {boat.capacity} guests
+          </span>
+          {hasRating && (
+            <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded">
+              ★ {rating.toFixed(1)} ({boat.reviewCount})
             </span>
-          </div>
-
-          {/* Rating & Capacity */}
-          <div className="flex items-center justify-between mb-3">
-            {hasRating ? (
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="font-semibold text-sm">{rating.toFixed(1)}</span>
-                {boat.reviewCount > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    ({boat.reviewCount})
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">No reviews yet</span>
-            )}
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Users className="h-3.5 w-3.5" />
-              <span>Up to {boat.capacity}</span>
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="border-t pt-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-lg font-bold text-primary">
-                {formatPrice(boat.minPricePerPerson)}
-              </span>
-              {Number(boat.minPricePerPerson) > 0 && (
-                <span className="text-xs text-muted-foreground">per person</span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+        <div className="mt-3 flex items-center justify-between mt-auto pt-3">
+          <span className="text-primary font-semibold">
+            {Number(boat.minPricePerPerson) > 0
+              ? `From $${Number(boat.minPricePerPerson).toFixed(0)}/person`
+              : "Call for pricing"}
+          </span>
+          <span className="text-sm text-primary font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+            Details <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      </div>
     </Link>
   );
 }

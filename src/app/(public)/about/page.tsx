@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "About Us",
   description:
     "Learn about Party Boats USA — your trusted directory for finding the best party boat fishing charters across the United States.",
+  alternates: { canonical: "/about" },
 };
 
 const FEATURES = [

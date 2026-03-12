@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchBoats } from "@/lib/db/queries/boats";
+import { db } from "@/lib/db";
+import { boats, states, amenities, boatAmenities } from "@/lib/db/schema";
+import { eq, sql, asc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
+
+  // Return filter metadata (states & amenities that have listings)
+  if (params.get("meta") === "filters") {
+    const [statesWithListings, amenitiesWithListings] = await Promise.all([
+      db.select({ code: states.code, name: states.name })
+        .from(states)
+        .where(sql`${states.code} IN (SELECT DISTINCT ${boats.stateCode} FROM ${boats} WHERE ${boats.isPublished} = true)`)
+        .orderBy(asc(states.name)),
+      db.select({ id: amenities.id, name: amenities.name, slug: amenities.slug })
+        .from(amenities)
+        .where(sql`${amenities.id} IN (SELECT DISTINCT ${boatAmenities.amenityId} FROM ${boatAmenities})`)
+        .orderBy(asc(amenities.sortOrder)),
+    ]);
+    return NextResponse.json({ states: statesWithListings, amenities: amenitiesWithListings });
+  }
 
   const filters = {
     query: params.get("q") || undefined,

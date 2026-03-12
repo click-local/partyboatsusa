@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat, Geist } from "next/font/google";
 import { Toaster } from "sonner";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -47,9 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className={`${inter.variable} ${montserrat.variable}`}>
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+        {children}
         <Toaster position="top-right" richColors />
       </body>
     </html>

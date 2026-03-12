@@ -38,7 +38,7 @@ export function Footer() {
           <div>
             <h3 className="font-display font-semibold text-white mb-4">For Operators</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/operator/login" className="hover:text-white transition-colors">Operator Login</Link></li>
+              <li><Link href="/operator/login" className="hover:text-white transition-colors">Captain&apos;s Portal</Link></li>
               <li><Link href="/operator/login" className="hover:text-white transition-colors">List Your Boat</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
             </ul>

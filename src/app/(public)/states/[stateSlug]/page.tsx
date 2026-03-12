@@ -11,6 +11,8 @@ import { formatImageUrl } from "@/lib/utils";
 import { ContentBlockRenderer } from "@/components/content-blocks";
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
+
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -23,18 +25,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!destPage) {
     const state = await getStateBySlug(stateSlug);
     if (!state) return { title: "State Not Found" };
+    const desc = `Find the best party boat fishing charters in ${state.name}. Browse boats, compare prices, and book your trip.`;
     return {
       title: `Party Boat Fishing in ${state.name}`,
-      description: `Find the best party boat fishing charters in ${state.name}. Browse boats, compare prices, and book your trip.`,
+      description: desc,
+      twitter: { card: "summary_large_image", description: desc },
+      alternates: { canonical: `/states/${stateSlug}` },
     };
   }
 
+  const title = destPage.seoTitle || `Party Boat Fishing in ${destPage.state.name}`;
+  const desc = destPage.seoDescription || `Find the best party boat fishing charters in ${destPage.state.name}.`;
+  const image = destPage.heroImageUrl ? formatImageUrl(destPage.heroImageUrl) : undefined;
+
   return {
-    title: destPage.seoTitle || `Party Boat Fishing in ${destPage.state.name}`,
-    description: destPage.seoDescription || `Find the best party boat fishing charters in ${destPage.state.name}.`,
+    title,
+    description: desc,
     openGraph: {
-      images: destPage.heroImageUrl ? [formatImageUrl(destPage.heroImageUrl)] : undefined,
+      images: image ? [image] : undefined,
     },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: image ? [image] : undefined,
+    },
+    alternates: { canonical: `/states/${stateSlug}` },
   };
 }
 
@@ -75,6 +91,7 @@ export default async function StatePage({ params }: Props) {
             fill
             className="object-cover"
             priority
+            sizes="100vw"
           />
         )}
         <div className="absolute inset-0 bg-primary/70" />
@@ -90,16 +107,7 @@ export default async function StatePage({ params }: Props) {
       </section>
 
       <div className="container mx-auto px-4 py-12">
-        {/* Content Blocks */}
-        {destPage?.blocks && destPage.blocks.length > 0 && (
-          <div className="mb-12 space-y-8">
-            {destPage.blocks.map((block) => (
-              <ContentBlockRenderer key={block.id} block={block} />
-            ))}
-          </div>
-        )}
-
-        {/* Popular Cities */}
+        {/* Popular Cities — always at top */}
         {cities.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-display font-bold mb-4">
@@ -116,30 +124,61 @@ export default async function StatePage({ params }: Props) {
           </section>
         )}
 
-        {/* Boat Listings */}
-        <section>
-          <h2 className="text-2xl font-display font-bold mb-6">
-            Party Boats in {state.name}
-            <span className="text-muted-foreground font-normal text-lg ml-2">
-              ({boatData.total})
-            </span>
-          </h2>
+        {/* Content Blocks (boats blocks render inline with boat data) */}
+        {destPage?.blocks && destPage.blocks.length > 0 && (
+          <div className="mb-12 space-y-8">
+            {destPage.blocks.map((block) => (
+              <ContentBlockRenderer
+                key={block.id}
+                block={block}
+                boats={block.blockType === "boats" ? boatData.boats : undefined}
+              />
+            ))}
+          </div>
+        )}
 
-          {boatData.boats.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {boatData.boats.map((boat) => (
-                <BoatCard key={boat.id} boat={boat} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No party boats listed in {state.name} yet. Check back soon!
-              </p>
-            </div>
-          )}
-        </section>
+        {/* Boat Listings — only show if no "boats" content block handles it */}
+        {(!destPage?.blocks || !destPage.blocks.some((b) => b.blockType === "boats")) && (
+          <section>
+            <h2 className="text-2xl font-display font-bold mb-6">
+              Party Boats in {state.name}
+              <span className="text-muted-foreground font-normal text-lg ml-2">
+                ({boatData.total})
+              </span>
+            </h2>
+
+            {boatData.boats.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {boatData.boats.map((boat) => (
+                  <BoatCard key={boat.id} boat={boat} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No party boats listed in {state.name} yet. Check back soon!
+                </p>
+              </div>
+            )}
+          </section>
+        )}
       </div>
+
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "Destinations", item: `${SITE_URL}/destinations` },
+              { "@type": "ListItem", position: 3, name: state.name, item: `${SITE_URL}/states/${stateSlug}` },
+            ],
+          }),
+        }}
+      />
     </>
   );
 }

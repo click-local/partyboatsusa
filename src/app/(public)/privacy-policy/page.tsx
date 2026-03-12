@@ -4,7 +4,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Privacy policy for Party Boats USA website.",
+  description:
+    "Learn how Party Boats USA collects, uses, and protects your personal information. Read our privacy policy covering data collection, cookies, and your rights.",
+  alternates: { canonical: "/privacy-policy" },
 };
 
 export default function PrivacyPolicyPage() {

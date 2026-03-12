@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Browse Destinations",
   description:
     "Explore party boat fishing destinations across the United States. Find charters by state and city.",
+  alternates: { canonical: "/destinations" },
 };
 
 export default async function DestinationsPage() {
@@ -70,7 +71,7 @@ export default async function DestinationsPage() {
 
             return (
               <Link key={state.code} href={`/states/${state.slug}`}>
-                <Card className="group overflow-hidden hover:shadow-card-hover transition-all duration-300 h-full">
+                <Card className="group overflow-hidden hover:shadow-card-hover transition-all duration-300 h-full pt-0 gap-0">
                   <div className="relative aspect-[3/4] overflow-hidden bg-muted">
                     {imageUrl ? (
                       <Image

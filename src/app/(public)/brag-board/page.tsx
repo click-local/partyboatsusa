@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "Brag Board",
   description:
     "Check out the latest catches from party boat fishing trips across the USA! Share your own photos on the brag board.",
+  alternates: { canonical: "/brag-board" },
 };
 
 export default async function BragBoardPage() {
@@ -57,7 +58,7 @@ export default async function BragBoardPage() {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {photos.map(({ photo, boatName, boatSlug }) => (
-                <Card key={photo.id} className="group overflow-hidden">
+                <Card key={photo.id} className="group overflow-hidden pt-0 gap-0">
                   <div className="relative aspect-square overflow-hidden bg-muted">
                     <Image
                       src={formatImageUrl(photo.photoUrl)}
