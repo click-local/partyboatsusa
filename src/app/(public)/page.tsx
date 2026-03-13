@@ -4,7 +4,7 @@ import { Search, MapPin, ArrowRight, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { siteSettings, boats, bragBoardPhotos, destinationPages, states } from "@/lib/db/schema";
 import { desc, eq, and, inArray } from "drizzle-orm";
-import { getFeaturedBoats } from "@/lib/db/queries/boats";
+import { getFeaturedBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -49,6 +49,7 @@ export default async function Home() {
   ]);
 
   const hero = settingsRows[0];
+  const tierBadges = await getTierBadgesForBoats(featuredBoats.map((b) => b.operatorId));
 
   // Resolve state names/slugs for destination pages
   const stateIds = destPages.map((p) => p.referenceId);
@@ -126,11 +127,21 @@ export default async function Home() {
                       objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
                     }}
                   />
-                  {boat.isFeatured && (
-                    <span className="absolute top-3 left-3 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
-                      Featured
-                    </span>
-                  )}
+                  <div className="absolute top-3 left-3 flex gap-1.5">
+                    {boat.isFeatured && (
+                      <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
+                        Featured
+                      </span>
+                    )}
+                    {tierBadges.get(boat.operatorId!) && (
+                      <span
+                        className="px-2 py-0.5 text-white text-xs font-semibold rounded"
+                        style={{ backgroundColor: tierBadges.get(boat.operatorId!)!.color }}
+                      >
+                        {tierBadges.get(boat.operatorId!)!.name}
+                      </span>
+                    )}
+                  </div>
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3">
                     <span className="text-white text-sm font-medium">
                       {boat.cityName}, {boat.stateCode}

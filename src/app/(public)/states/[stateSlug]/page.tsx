@@ -5,7 +5,7 @@ import { ChevronRight, MapPin } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { BoatCard } from "@/components/boat-card";
 import { getStateBySlug, getCitiesByState } from "@/lib/db/queries/states";
-import { getBoatsByState } from "@/lib/db/queries/boats";
+import { getBoatsByState, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-pages";
 import { formatImageUrl } from "@/lib/utils";
 import { ContentBlockRenderer } from "@/components/content-blocks";
@@ -65,6 +65,8 @@ export default async function StatePage({ params }: Props) {
     getBoatsByState(state.code, 1, 50),
     getCitiesByState(state.code),
   ]);
+
+  const tierBadges = await getTierBadgesForBoats(boatData.boats.map((b) => b.operatorId));
 
   const heroImage = destPage?.heroImageUrl;
 
@@ -162,6 +164,7 @@ export default async function StatePage({ params }: Props) {
                 key={block.id}
                 block={block}
                 boats={block.blockType === "boats" ? boatData.boats : undefined}
+                tierBadges={block.blockType === "boats" ? tierBadges : undefined}
               />
             ))}
           </div>
@@ -180,7 +183,7 @@ export default async function StatePage({ params }: Props) {
             {boatData.boats.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {boatData.boats.map((boat) => (
-                  <BoatCard key={boat.id} boat={boat} />
+                  <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges.get(boat.operatorId!) || null} />
                 ))}
               </div>
             ) : (

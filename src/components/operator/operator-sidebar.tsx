@@ -11,6 +11,7 @@ import {
   Anchor,
   Menu,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 const NAV_ITEMS = [
   { href: "/operator/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/operator/boats", label: "My Boats", icon: Ship },
+  { href: "/operator/reviews", label: "Reviews", icon: MessageSquare },
   { href: "/operator/settings", label: "Settings", icon: Settings },
   { href: "/operator/upgrade", label: "Upgrade", icon: ArrowUpCircle },
 ];

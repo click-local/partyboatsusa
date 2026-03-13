@@ -247,6 +247,23 @@ export async function getBoatsByState(stateCode: string, page = 1, limit = 18) {
   };
 }
 
+export async function getTierBadgesForBoats(operatorIds: (number | null)[]) {
+  const validIds = [...new Set(operatorIds.filter((id): id is number => id !== null))];
+  if (validIds.length === 0) return new Map<number, { name: string; color: string }>();
+
+  const results = await db
+    .select({
+      operatorId: operators.id,
+      tierName: membershipTiers.name,
+      badgeColor: membershipTiers.badgeColor,
+    })
+    .from(operators)
+    .innerJoin(membershipTiers, eq(operators.membershipTierId, membershipTiers.id))
+    .where(and(inArray(operators.id, validIds), eq(membershipTiers.displayBadge, true)));
+
+  return new Map(results.map((r) => [r.operatorId, { name: r.tierName, color: r.badgeColor || "#3B82F6" }]));
+}
+
 export async function getBoatCountsByState() {
   return db
     .select({

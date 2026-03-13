@@ -35,6 +35,7 @@ interface SearchResult {
   total: number;
   page: number;
   totalPages: number;
+  tierBadges?: Record<number, { name: string; color: string }>;
 }
 
 function SearchPageContent() {
@@ -346,7 +347,11 @@ function SearchPageContent() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {results.boats.map((boat) => (
-                    <BoatCard key={boat.id} boat={boat} />
+                    <BoatCard
+                      key={boat.id}
+                      boat={boat}
+                      tierBadge={boat.operatorId && results.tierBadges?.[boat.operatorId] || null}
+                    />
                   ))}
                 </div>
 

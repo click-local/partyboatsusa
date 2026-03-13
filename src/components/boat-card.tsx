@@ -6,9 +6,10 @@ import type { SelectBoat } from "@/lib/db/schema";
 
 interface BoatCardProps {
   boat: SelectBoat;
+  tierBadge?: { name: string; color: string } | null;
 }
 
-export function BoatCard({ boat }: BoatCardProps) {
+export function BoatCard({ boat, tierBadge }: BoatCardProps) {
   const imageUrl = formatImageUrl(boat.primaryImageUrl);
   const rating = Number(boat.rating || 0);
   const hasRating = rating > 0;
@@ -35,11 +36,21 @@ export function BoatCard({ boat }: BoatCardProps) {
             <MapPin className="h-10 w-10 text-primary/30" />
           </div>
         )}
-        {(boat.isFeaturedAdmin || boat.isFeatured) && (
-          <span className="absolute top-3 left-3 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
-            Featured
-          </span>
-        )}
+        <div className="absolute top-3 left-3 flex gap-1.5">
+          {(boat.isFeaturedAdmin || boat.isFeatured) && (
+            <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
+              Featured
+            </span>
+          )}
+          {tierBadge && (
+            <span
+              className="px-2 py-0.5 text-white text-xs font-semibold rounded"
+              style={{ backgroundColor: tierBadge.color }}
+            >
+              {tierBadge.name}
+            </span>
+          )}
+        </div>
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3">
           <span className="text-white text-sm font-medium">
             {boat.cityName}, {boat.stateCode}

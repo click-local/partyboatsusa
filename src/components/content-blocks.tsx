@@ -8,6 +8,7 @@ import type { SelectContentBlock, SelectBoat } from "@/lib/db/schema";
 interface ContentBlockProps {
   block: SelectContentBlock;
   boats?: SelectBoat[];
+  tierBadges?: Map<number, { name: string; color: string }>;
 }
 
 interface TextBlockContent {
@@ -61,7 +62,7 @@ function sortBoats(boats: SelectBoat[], sortBy: string): SelectBoat[] {
   }
 }
 
-export function ContentBlockRenderer({ block, boats }: ContentBlockProps) {
+export function ContentBlockRenderer({ block, boats, tierBadges }: ContentBlockProps) {
   const content = block.content as Record<string, unknown>;
 
   switch (block.blockType) {
@@ -192,7 +193,7 @@ export function ContentBlockRenderer({ block, boats }: ContentBlockProps) {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayBoats.map((boat) => (
-              <BoatCard key={boat.id} boat={boat} />
+              <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges?.get(boat.operatorId!) || null} />
             ))}
           </div>
         </section>

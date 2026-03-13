@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchBoats } from "@/lib/db/queries/boats";
+import { searchBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { db } from "@/lib/db";
 import { boats, states, amenities, boatAmenities } from "@/lib/db/schema";
 import { eq, sql, asc } from "drizzle-orm";
@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const results = await searchBoats(filters);
-    return NextResponse.json(results);
+    const tierBadges = await getTierBadgesForBoats(results.boats.map((b) => b.operatorId));
+    const badgesObj: Record<number, { name: string; color: string }> = {};
+    tierBadges.forEach((v, k) => { badgesObj[k] = v; });
+    return NextResponse.json({ ...results, tierBadges: badgesObj });
   } catch (error) {
     console.error("Search error:", error);
     return NextResponse.json({ error: "Search failed" }, { status: 500 });

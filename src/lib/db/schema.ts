@@ -224,11 +224,13 @@ export const reviews = pgTable("reviews", {
   comment: text("comment").notNull(),
   tripDate: text("trip_date"),
   status: text("status").notNull().default("pending"),
+  operatorReply: text("operator_reply"),
+  operatorReplyAt: timestamp("operator_reply_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true, status: true });
+export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true, status: true, operatorReply: true, operatorReplyAt: true });
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type SelectReview = typeof reviews.$inferSelect;
 

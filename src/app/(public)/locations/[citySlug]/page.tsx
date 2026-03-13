@@ -7,6 +7,7 @@ import { getCityBySlug } from "@/lib/db/queries/states";
 import { getDestinationPageByCitySlug } from "@/lib/db/queries/destination-pages";
 import { ContentBlockRenderer } from "@/components/content-blocks";
 import { formatImageUrl } from "@/lib/utils";
+import { getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { db } from "@/lib/db";
 import { boats } from "@/lib/db/schema";
 import { eq, and, ilike, desc } from "drizzle-orm";
@@ -69,6 +70,8 @@ export default async function CityPage({ params }: Props) {
       .orderBy(desc(boats.rating)),
   ]);
 
+  const tierBadges = await getTierBadgesForBoats(cityBoats.map((b) => b.operatorId));
+
   const heroImage = destPage?.heroImageUrl;
 
   return (
@@ -123,6 +126,7 @@ export default async function CityPage({ params }: Props) {
                 key={block.id}
                 block={block}
                 boats={block.blockType === "boats" ? cityBoats : undefined}
+                tierBadges={block.blockType === "boats" ? tierBadges : undefined}
               />
             ))}
           </div>
@@ -141,7 +145,7 @@ export default async function CityPage({ params }: Props) {
             {cityBoats.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {cityBoats.map((boat) => (
-                  <BoatCard key={boat.id} boat={boat} />
+                  <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges.get(boat.operatorId!) || null} />
                 ))}
               </div>
             ) : (

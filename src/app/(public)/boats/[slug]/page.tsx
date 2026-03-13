@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BoatCard } from "@/components/boat-card";
 import { ReviewSection } from "@/components/review-section";
-import { getBoatBySlug, getNearbyBoats, getFleetBoats } from "@/lib/db/queries/boats";
+import { getBoatBySlug, getNearbyBoats, getFleetBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getReviewsByBoat, getBoatRatingStats } from "@/lib/db/queries/reviews";
 import { getBragBoardPhotosByBoat } from "@/lib/db/queries/brag-board";
 import { BoatLocationMap } from "@/components/map/boat-location-map";
@@ -76,6 +76,10 @@ export default async function BoatDetailPage({ params }: Props) {
   // Filter out fleet boats from nearby boats to avoid duplicates
   const fleetBoatIds = new Set(fleetBoats.map((b) => b.id));
   const filteredNearbyBoats = nearbyBoats.filter((b) => !fleetBoatIds.has(b.id));
+
+  // Fetch tier badges for fleet + nearby boats
+  const allRelatedBoats = [...fleetBoats, ...filteredNearbyBoats];
+  const tierBadges = await getTierBadgesForBoats(allRelatedBoats.map((b) => b.operatorId));
 
   const heroImage = formatImageUrl(boat.primaryImageUrl);
   const galleryImages = boat.galleryImageUrls?.filter(Boolean) || [];
@@ -514,64 +518,86 @@ export default async function BoatDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Brag Board Gallery */}
-        {bragPhotos.length > 0 && (
-          <section className="mt-12 border-t pt-12">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-              <div>
-                <h2 className="text-2xl font-display font-bold">Brag Board</h2>
-                <p className="text-muted-foreground mt-1">Recent catches from this boat</p>
+        {/* Brag Board Gallery - Pro only, teaser for Basic claimed */}
+        {boat.operatorTier?.isHighestTier ? (
+          bragPhotos.length > 0 && (
+            <section className="mt-12 border-t pt-12">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-display font-bold">Brag Board</h2>
+                  <p className="text-muted-foreground mt-1">Recent catches from this boat</p>
+                </div>
+                <div className="flex gap-2">
+                  <Link href={`/brag-board?boat=${boat.id}`}>
+                    <Button variant="outline" size="sm">Share Your Catch</Button>
+                  </Link>
+                  <Link href="/brag-board">
+                    <Button variant="outline" size="sm">View All Catches</Button>
+                  </Link>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Link href={`/brag-board?boat=${boat.id}`}>
-                  <Button variant="outline" size="sm">Share Your Catch</Button>
-                </Link>
-                <Link href="/brag-board">
-                  <Button variant="outline" size="sm">View All Catches</Button>
-                </Link>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {bragPhotos.map((photo) => (
-                <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100">
-                  <Image
-                    src={formatImageUrl(photo.photoUrl)}
-                    alt={photo.catchDescription}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="text-white text-sm font-medium line-clamp-2">{photo.catchDescription}</p>
-                      <p className="text-white/80 text-xs mt-1">{photo.submitterName}</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {bragPhotos.map((photo) => (
+                  <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100">
+                    <Image
+                      src={formatImageUrl(photo.photoUrl)}
+                      alt={photo.catchDescription}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <p className="text-white text-sm font-medium line-clamp-2">{photo.catchDescription}</p>
+                        <p className="text-white/80 text-xs mt-1">{photo.submitterName}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Gallery */}
-        {galleryImages.length > 0 && (
+                ))}
+              </div>
+            </section>
+          )
+        ) : !isUnclaimed ? (
           <section className="mt-12 border-t pt-12">
-            <h2 className="text-2xl font-display font-bold mb-6">Photo Gallery</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {galleryImages.map((url, i) => (
-                <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
-                  <Image
-                    src={formatImageUrl(url)}
-                    alt={`${boat.name} photo ${i + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                  />
-                </div>
-              ))}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+              <h2 className="text-xl font-display font-bold mb-2">Brag Board</h2>
+              <p className="text-muted-foreground text-sm">
+                Customer catches are showcased here on Pro listings.
+              </p>
             </div>
           </section>
-        )}
+        ) : null}
+
+        {/* Gallery - Pro only, teaser for Basic claimed */}
+        {boat.operatorTier?.isHighestTier ? (
+          galleryImages.length > 0 && (
+            <section className="mt-12 border-t pt-12">
+              <h2 className="text-2xl font-display font-bold mb-6">Photo Gallery</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {galleryImages.map((url, i) => (
+                  <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
+                    <Image
+                      src={formatImageUrl(url)}
+                      alt={`${boat.name} photo ${i + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )
+        ) : !isUnclaimed ? (
+          <section className="mt-12 border-t pt-12">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+              <h2 className="text-xl font-display font-bold mb-2">Photo Gallery</h2>
+              <p className="text-muted-foreground text-sm">
+                Photo gallery is available on Pro listings.
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {/* Reviews */}
         <section className="mt-12 border-t pt-12">
@@ -581,6 +607,7 @@ export default async function BoatDetailPage({ params }: Props) {
             reviews={reviewData.reviews}
             averageRating={ratingStats.averageRating}
             reviewCount={ratingStats.reviewCount}
+            operatorName={boat.operatorName}
           />
         </section>
 
@@ -592,7 +619,7 @@ export default async function BoatDetailPage({ params }: Props) {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {fleetBoats.map((fb) => (
-                <BoatCard key={fb.id} boat={fb} />
+                <BoatCard key={fb.id} boat={fb} tierBadge={tierBadges.get(fb.operatorId!) || null} />
               ))}
             </div>
           </section>
@@ -606,7 +633,7 @@ export default async function BoatDetailPage({ params }: Props) {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredNearbyBoats.slice(0, 6).map((nb) => (
-                <BoatCard key={nb.id} boat={nb} />
+                <BoatCard key={nb.id} boat={nb} tierBadge={tierBadges.get(nb.operatorId!) || null} />
               ))}
             </div>
           </section>

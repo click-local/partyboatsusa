@@ -15,6 +15,7 @@ interface ReviewSectionProps {
   reviews: SelectReview[];
   averageRating: number;
   reviewCount: number;
+  operatorName?: string;
 }
 
 function StarRating({
@@ -49,6 +50,7 @@ export function ReviewSection({
   reviews,
   averageRating,
   reviewCount,
+  operatorName,
 }: ReviewSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -201,6 +203,19 @@ export function ReviewSection({
                 </div>
                 <h4 className="font-medium mb-1">{review.title}</h4>
                 <p className="text-sm text-muted-foreground">{review.comment}</p>
+                {review.operatorReply && (
+                  <div className="mt-4 ml-4 pl-4 border-l-2 border-primary/30 bg-primary/5 rounded-r-lg p-3">
+                    <p className="text-xs font-semibold text-primary mb-1">
+                      Response from {operatorName || "the Captain"}
+                    </p>
+                    <p className="text-sm text-foreground">{review.operatorReply}</p>
+                    {review.operatorReplyAt && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(review.operatorReplyAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

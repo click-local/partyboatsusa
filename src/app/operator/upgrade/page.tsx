@@ -27,6 +27,10 @@ const basicFeatures = [
   { name: "Direct booking from your listing", included: false },
   { name: "Social media links", included: false },
   { name: "Search priority boost", included: false },
+  { name: "Pro Captain badge", included: false },
+  { name: "Photo gallery", included: false },
+  { name: "Brag Board on listing", included: false },
+  { name: "Reply to reviews", included: false },
 ];
 
 const proFeatures = [
@@ -35,6 +39,10 @@ const proFeatures = [
   { name: "Direct booking from your listing", included: true },
   { name: "Social media links", included: true },
   { name: "Search priority boost", included: true },
+  { name: "Pro Captain badge on your listing", included: true },
+  { name: "Photo gallery on your listing", included: true },
+  { name: "Customer catches (Brag Board) on your listing", included: true },
+  { name: "Respond to customer reviews", included: true },
 ];
 
 export default function UpgradePage() {
