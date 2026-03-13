@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatImageUrl(url: string | null | undefined): string {
-  if (!url) return "/images/placeholder-boat.jpg";
+  if (!url) return "/images/placeholder-boat.svg";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   if (url.startsWith("/")) return url;
   return `/${url}`;

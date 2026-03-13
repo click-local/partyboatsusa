@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Ship, Plus, Trash2, Edit, Loader2, Eye, EyeOff, Star } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { formatImageUrl } from "@/lib/utils";
 
 interface Boat {
   id: number;
@@ -116,7 +117,7 @@ export default function AdminBoatsPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {boat.primaryImageUrl && (
-                      <img src={boat.primaryImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                      <img src={formatImageUrl(boat.primaryImageUrl)} alt="" className="w-10 h-10 rounded object-cover" />
                     )}
                     <div>
                       <div className="font-medium">{boat.name}</div>

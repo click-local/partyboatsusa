@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Ship, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatImageUrl } from "@/lib/utils";
 
 interface Boat {
   id: number;
@@ -73,7 +74,7 @@ export default function OperatorBoatsPage() {
               <div className="w-20 h-14 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
                 {boat.primaryImageUrl ? (
                   <img
-                    src={boat.primaryImageUrl}
+                    src={formatImageUrl(boat.primaryImageUrl)}
                     alt={boat.name}
                     className="w-full h-full object-cover"
                   />

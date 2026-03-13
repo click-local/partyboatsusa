@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { siteSettings, boats, bragBoardPhotos, destinationPages, states } from "@/lib/db/schema";
 import { desc, eq, and, inArray } from "drizzle-orm";
 import { getFeaturedBoats } from "@/lib/db/queries/boats";
+import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
@@ -115,22 +116,16 @@ export default async function Home() {
                 className="group bg-white rounded-xl overflow-hidden shadow-sm border hover:shadow-md transition-shadow"
               >
                 <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-                  {boat.primaryImageUrl ? (
-                    <Image
-                      src={boat.primaryImageUrl}
-                      alt={boat.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      style={{
-                        objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <MapPin className="h-10 w-10 text-primary/30" />
-                    </div>
-                  )}
+                  <Image
+                    src={formatImageUrl(boat.primaryImageUrl)}
+                    alt={boat.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    style={{
+                      objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
+                    }}
+                  />
                   {boat.isFeatured && (
                     <span className="absolute top-3 left-3 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
                       Featured
@@ -206,7 +201,7 @@ export default async function Home() {
                   className="group relative aspect-[3/4] rounded-xl overflow-hidden shadow-sm"
                 >
                   <Image
-                    src={photo.photoUrl}
+                    src={formatImageUrl(photo.photoUrl)}
                     alt={photo.catchDescription}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#e5e7eb"/>
+  <g transform="translate(400,230)" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-40,20 L-50,0 L50,0 L40,20 Z" fill="#d1d5db"/>
+    <line x1="0" y1="0" x2="0" y2="-35"/>
+    <path d="M0,-35 L25,-20 L0,-10" fill="#d1d5db"/>
+    <path d="M-60,20 Q-60,35 -40,35 L40,35 Q60,35 60,20" fill="#d1d5db"/>
+  </g>
+  <text x="400" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#9ca3af">No Image Available</text>
+</svg>

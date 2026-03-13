@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { formatImageUrl } from "@/lib/utils";
 import {
   Ship,
   FileText,
@@ -307,7 +308,7 @@ function DashboardContent() {
                 className="bg-white rounded-lg border border-border overflow-hidden"
               >
                 <img
-                  src={photo.photoUrl}
+                  src={formatImageUrl(photo.photoUrl)}
                   alt={photo.catchDescription}
                   className="w-full h-48 object-cover"
                 />
