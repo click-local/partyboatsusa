@@ -71,7 +71,7 @@ export default async function Home() {
             sizes="100vw"
           />
         )}
-        {/* Bottom gradient only — image stays vivid at top */}
+        {/* Bottom gradient only - image stays vivid at top */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/80" />
         <div className="relative container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 [text-shadow:_0_2px_12px_rgba(0,0,0,0.7)]">

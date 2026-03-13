@@ -81,7 +81,7 @@ export default async function BoatDetailPage({ params }: Props) {
   const galleryImages = boat.galleryImageUrls?.filter(Boolean) || [];
   const rating = Number(boat.rating || 0);
 
-  // JSON-LD structured data — LocalBusiness for charter operators
+  // JSON-LD structured data -LocalBusiness for charter operators
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -370,7 +370,7 @@ export default async function BoatDetailPage({ params }: Props) {
                 <CardContent className="p-6 space-y-4">
                   {boat.operatorId ? (
                     <>
-                      {/* Booking / Website button — gated by tier */}
+                      {/* Booking / Website button -gated by tier */}
                       {(boat.bookingUrl || boat.websiteUrl) && boat.operatorTier?.showBookingUrl !== false ? (
                         <LinkButton
                           href={boat.bookingUrl || boat.websiteUrl}
@@ -402,7 +402,7 @@ export default async function BoatDetailPage({ params }: Props) {
                         <div className="flex-grow border-t border-gray-200"></div>
                       </div>
 
-                      {/* Contact Info — gated by tier */}
+                      {/* Contact Info -gated by tier */}
                       <div className="space-y-3">
                         {boat.operatorTier?.showPhone !== false && boat.phone && (
                           <a href={`tel:${boat.phone}`} className="block">
@@ -421,7 +421,7 @@ export default async function BoatDetailPage({ params }: Props) {
                           </a>
                         )}
 
-                        {/* Social Links — gated by tier */}
+                        {/* Social Links -gated by tier */}
                         {boat.operatorTier?.showSocialMedia !== false &&
                          (boat.socialFacebook || boat.socialInstagram || boat.socialYoutube) && (
                           <div className="flex gap-3 justify-center pt-2">
@@ -454,7 +454,7 @@ export default async function BoatDetailPage({ params }: Props) {
                     </>
                   ) : (
                     <>
-                      {/* Unclaimed boat — show phone only, no tier gating */}
+                      {/* Unclaimed boat -show phone only, no tier gating */}
                       {boat.phone && (
                         <>
                           <div className="relative flex py-2 items-center">

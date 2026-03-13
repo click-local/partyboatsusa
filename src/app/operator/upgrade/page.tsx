@@ -88,7 +88,7 @@ export default function UpgradePage() {
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Let customers book directly from your Party Boats USA listing.
-          Pro status is free &mdash; just link your GoFish account and we handle the rest.
+          Pro status is free. Just link your GoFish account and we handle the rest.
         </p>
       </div>
 
@@ -170,7 +170,7 @@ export default function UpgradePage() {
             <div className="pt-2">
               <div className="flex items-center justify-center gap-2 w-full bg-green-50 text-green-700 py-3 rounded-lg text-sm font-medium border border-green-200">
                 <CheckCircle className="h-4 w-4" />
-                Request submitted &mdash; we&apos;ll be in touch!
+                Request submitted! We&apos;ll be in touch soon.
               </div>
             </div>
           ) : (
@@ -194,7 +194,7 @@ export default function UpgradePage() {
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "I Need a GoFish Account"
+                  "I Need a Free GoFish Account"
                 )}
               </button>
             </div>
@@ -265,7 +265,7 @@ export default function UpgradePage() {
             to power direct bookings on our platform. GoFish is a booking and
             management platform built specifically for fishing charter operators.
             It handles online reservations, payments, waivers, and customer
-            communication &mdash; all in one place. By linking your GoFish account,
+            communication, all in one place. By linking your GoFish account,
             anglers browsing Party Boats USA can book your trips instantly without
             leaving your listing.
           </p>

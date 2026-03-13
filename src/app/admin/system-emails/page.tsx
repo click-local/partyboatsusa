@@ -170,7 +170,7 @@ export default function AdminSystemEmailsPage() {
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
                 <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{t.subject}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{t.trigger || "—"}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{t.trigger || "-"}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.isActive !== false ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                     {t.isActive !== false ? "Active" : "Inactive"}

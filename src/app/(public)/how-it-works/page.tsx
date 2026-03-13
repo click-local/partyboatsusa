@@ -37,7 +37,7 @@ const STEPS = [
     icon: Anchor,
     title: "Go Fishing!",
     description:
-      "Show up at the dock, grab your spot on the boat, and enjoy a day of fishing. Bait, tackle, and licenses are typically included — just bring your sunscreen!",
+      "Show up at the dock, grab your spot on the boat, and enjoy a day of fishing. Bait, tackle, and licenses are typically included. Just bring your sunscreen!",
   },
 ];
 
@@ -47,7 +47,7 @@ const TIPS = [
   "Wear non-slip shoes with closed toes",
   "If prone to seasickness, take medication before departure",
   "Bring a small cooler for drinks and snacks",
-  "Ask the crew for tips — they know the best techniques",
+  "Ask the crew for tips. They know the best techniques",
   "Don't forget your camera for the brag board!",
 ];
 

@@ -43,12 +43,12 @@ const FAQS = [
   {
     question: "What if the weather is bad?",
     answer:
-      "Safety is the top priority. If weather conditions are unsafe, the trip will be cancelled and you'll typically receive a full refund or the option to reschedule. For light rain, trips usually still go out — fish actually bite better in overcast conditions! Check with your operator for their specific cancellation policy.",
+      "Safety is the top priority. If weather conditions are unsafe, the trip will be cancelled and you'll typically receive a full refund or the option to reschedule. For light rain, trips usually still go out. Fish actually bite better in overcast conditions! Check with your operator for their specific cancellation policy.",
   },
   {
     question: "Are party boats safe for children?",
     answer:
-      "Party boats are generally safe for children and many families bring kids along. However, age requirements vary by operator — some have minimum age requirements while others welcome all ages. Life jackets are available on board and the crew is trained in safety procedures. Check with the specific operator for their age policies.",
+      "Party boats are generally safe for children and many families bring kids along. However, age requirements vary by operator. Some have minimum age requirements while others welcome all ages. Life jackets are available on board and the crew is trained in safety procedures. Check with the specific operator for their age policies.",
   },
   {
     question: "Do I need to make a reservation?",
@@ -58,7 +58,7 @@ const FAQS = [
   {
     question: "How is Party Boats USA different from the actual charter operators?",
     answer:
-      "Party Boats USA is a directory and comparison platform — we help you find and compare party boat charters, but we don't operate any boats ourselves. When you're ready to book, we connect you directly with the charter operator. This means you always get the best price and deal directly with the people running your trip.",
+      "Party Boats USA is a directory and comparison platform. We help you find and compare party boat charters, but we don't operate any boats ourselves. When you're ready to book, we connect you directly with the charter operator. This means you always get the best price and deal directly with the people running your trip.",
   },
 ];
 

@@ -83,7 +83,7 @@ export default async function StatePage({ params }: Props) {
         </div>
       </div>
 
-      {/* Hero — Google Map with boat markers */}
+      {/* Hero -Google Map with boat markers */}
       {(() => {
         const mappableBoats = boatData.boats
           .filter((b) => b.latitude && b.longitude)
@@ -137,7 +137,7 @@ export default async function StatePage({ params }: Props) {
       })()}
 
       <div className="container mx-auto px-4 py-12">
-        {/* Popular Cities — always at top */}
+        {/* Popular Cities -always at top */}
         {cities.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-display font-bold mb-4">
@@ -167,7 +167,7 @@ export default async function StatePage({ params }: Props) {
           </div>
         )}
 
-        {/* Boat Listings — only show if no "boats" content block handles it */}
+        {/* Boat Listings -only show if no "boats" content block handles it */}
         {(!destPage?.blocks || !destPage.blocks.some((b) => b.blockType === "boats")) && (
           <section>
             <h2 className="text-2xl font-display font-bold mb-6">

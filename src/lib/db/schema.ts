@@ -99,7 +99,7 @@ export const insertMembershipTierSchema = createInsertSchema(membershipTiers).om
 export type InsertMembershipTier = z.infer<typeof insertMembershipTierSchema>;
 export type SelectMembershipTier = typeof membershipTiers.$inferSelect;
 
-// Operators table — auth handled by Supabase Auth, this stores business data only
+// Operators table - auth handled by Supabase Auth, this stores business data only
 export const operators = pgTable("operators", {
   id: serial("id").primaryKey(),
   authUserId: uuid("auth_user_id").notNull().unique(), // References Supabase auth.users.id

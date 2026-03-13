@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       phone: operator.phone,
     },
     note: hasGoFish
-      ? "Operator has GoFish account — ready to link"
-      : "Operator needs GoFish setup — schedule demo",
+      ? "Operator has GoFish account, ready to link"
+      : "Operator needs GoFish setup, schedule demo",
   });
 
   // Send notification email to admin
@@ -37,20 +37,20 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>",
       to: ADMIN_EMAIL,
-      subject: `Pro Upgrade Request — ${operator.companyName}`,
+      subject: `Pro Upgrade Request - ${operator.companyName}`,
       html: `
         <h2>New Pro Upgrade Request</h2>
         <p><strong>Company:</strong> ${operator.companyName}</p>
         <p><strong>Contact:</strong> ${operator.contactName}</p>
         <p><strong>Email:</strong> ${operator.email}</p>
         <p><strong>Phone:</strong> ${operator.phone || "Not provided"}</p>
-        <p><strong>Has GoFish Account:</strong> ${hasGoFish ? "Yes — ready to link" : "No — needs demo"}</p>
+        <p><strong>Has GoFish Account:</strong> ${hasGoFish ? "Yes, ready to link" : "No, needs demo"}</p>
         <p><strong>Current Tier:</strong> ${operator.tier?.name || "Basic"}</p>
       `,
     });
   } catch (emailError) {
     console.error("Failed to send upgrade notification email:", emailError);
-    // Don't fail the request — the log was saved
+    // Don't fail the request - the log was saved
   }
 
   return NextResponse.json({ success: true });

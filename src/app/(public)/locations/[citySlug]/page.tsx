@@ -128,7 +128,7 @@ export default async function CityPage({ params }: Props) {
           </div>
         )}
 
-        {/* Boat Listings — only show if no "boats" content block handles it */}
+        {/* Boat Listings - only show if no "boats" content block handles it */}
         {(!destPage?.blocks || !destPage.blocks.some((b) => b.blockType === "boats")) && (
           <section>
             <h2 className="text-2xl font-display font-bold mb-6">

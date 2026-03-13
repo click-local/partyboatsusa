@@ -117,7 +117,7 @@ export default function AdminOperatorTiersPage() {
                 <td className="px-4 py-3 font-medium">{o.operator.companyName}</td>
                 <td className="px-4 py-3 text-gray-600">{o.operator.contactName}</td>
                 <td className="px-4 py-3 text-gray-600">{o.operator.email}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{o.operator.phone || "—"}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{o.operator.phone || "-"}</td>
                 <td className="px-4 py-3">
                   {o.tierName ? (
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium text-white" style={{ backgroundColor: o.tierBadgeColor || "#3B82F6" }}>

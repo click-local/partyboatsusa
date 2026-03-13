@@ -105,15 +105,15 @@ export default function AdminCRMPage() {
           <tbody className="divide-y">
             {filtered.map((item) => (
               <tr key={item.log.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{item.companyName || "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{item.operatorEmail || "—"}</td>
+                <td className="px-4 py-3 font-medium">{item.companyName || "-"}</td>
+                <td className="px-4 py-3 text-gray-600">{item.operatorEmail || "-"}</td>
                 <td className="px-4 py-3">
                   <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">
                     {item.log.eventType}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{item.log.note || "—"}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{item.log.sourceIp || "—"}</td>
+                <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{item.log.note || "-"}</td>
+                <td className="px-4 py-3 text-gray-400 text-xs">{item.log.sourceIp || "-"}</td>
                 <td className="px-4 py-3 text-gray-500 text-xs">
                   {new Date(item.log.createdAt).toLocaleDateString()} {new Date(item.log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </td>

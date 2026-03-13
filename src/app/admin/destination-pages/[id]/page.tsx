@@ -314,7 +314,7 @@ export default function AdminEditDestinationPage() {
       }
       const saved = await pageRes.json();
 
-      // 2. Save ALL block content (not just edited ones — save everything to be safe)
+      // 2. Save ALL block content (not just edited ones - save everything to be safe)
       const blockSaveResults = await Promise.all(
         blocks.map((block) => {
           const editedContent = blockEdits[block.id] || block.content;

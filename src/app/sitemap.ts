@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/privacy-policy`, changeFrequency: "yearly", priority: 0.2, lastModified: new Date("2025-01-01") },
   ];
 
-  // Dynamic boat pages — use most recent review/brag photo date as lastModified proxy
+  // Dynamic boat pages -use most recent review/brag photo date as lastModified proxy
   let boatPages: MetadataRoute.Sitemap = [];
   try {
     const allBoats = await db
@@ -44,10 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: boat.lastActivity ? new Date(boat.lastActivity) : new Date("2025-01-01"),
     }));
   } catch {
-    // DB not connected yet — skip dynamic pages
+    // DB not connected yet -skip dynamic pages
   }
 
-  // State pages — use latest destination page update
+  // State pages -use latest destination page update
   let statePages: MetadataRoute.Sitemap = [];
   try {
     const allStates = await db

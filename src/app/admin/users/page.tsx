@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
           <tbody className="divide-y">
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{user.user_metadata?.name || "—"}</td>
+                <td className="px-4 py-3 font-medium">{user.user_metadata?.name || "-"}</td>
                 <td className="px-4 py-3 text-gray-600">{user.email}</td>
                 <td className="px-4 py-3 text-gray-500 text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right space-x-2">

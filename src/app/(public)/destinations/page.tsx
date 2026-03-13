@@ -66,7 +66,7 @@ export default async function DestinationsPage() {
         </div>
       </section>
 
-      {/* Interactive Map — desktop only */}
+      {/* Interactive Map - desktop only */}
       <section className="hidden md:block bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <USStatesMap states={mapData} />

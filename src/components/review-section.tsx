@@ -92,7 +92,7 @@ export function ReviewSection({
         <CardContent className="flex items-center gap-6 p-6">
           <div className="text-center">
             <div className="text-4xl font-bold text-primary">
-              {averageRating > 0 ? averageRating.toFixed(1) : "—"}
+              {averageRating > 0 ? averageRating.toFixed(1) : "-"}
             </div>
             <StarRating rating={Math.round(averageRating)} />
             <p className="text-sm text-muted-foreground mt-1">

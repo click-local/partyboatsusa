@@ -37,7 +37,7 @@ export function StateBoatsMap({ boats, center, className }: StateBoatsMapProps) 
       .slice(0, i)
       .filter((b) => b.latitude === boat.latitude && b.longitude === boat.longitude).length;
     if (dupeIndex === 0) return { ...boat, displayLat: boat.latitude, displayLng: boat.longitude };
-    // ~200m offset per duplicate — enough to click, close enough to be accurate
+    // ~200m offset per duplicate - enough to click, close enough to be accurate
     const angle = (dupeIndex * 90) * (Math.PI / 180);
     return {
       ...boat,

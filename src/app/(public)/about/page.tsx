@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about Party Boats USA — your trusted directory for finding the best party boat fishing charters across the United States.",
+    "Learn about Party Boats USA, your trusted directory for finding the best party boat fishing charters across the United States.",
   alternates: { canonical: "/about" },
 };
 
@@ -40,7 +40,7 @@ const FEATURES = [
     icon: Users,
     title: "Group-Friendly",
     description:
-      "Party boats are perfect for groups — no private charter needed. Just show up and fish!",
+      "Party boats are perfect for groups. No private charter needed. Just show up and fish!",
   },
   {
     icon: Anchor,
@@ -86,7 +86,7 @@ export default function AboutPage() {
           <Card>
             <CardContent className="p-6 space-y-4 text-muted-foreground">
               <p>
-                Party boat fishing — also known as headboat fishing — is a fun,
+                Party boat fishing, also known as headboat fishing, is a fun,
                 affordable way to get out on the water without chartering an
                 entire boat. Instead of paying for a private charter, you buy
                 individual tickets (or &quot;heads&quot;) aboard a large vessel
@@ -100,7 +100,7 @@ export default function AboutPage() {
                 every step of the way.
               </p>
               <p>
-                Party boats depart from ports all across the United States — from
+                Party boats depart from ports all across the United States, from
                 the Gulf Coast to the Atlantic seaboard, the Pacific Coast, and
                 beyond. Whether you&apos;re targeting snapper in Florida, cod in
                 New England, or yellowtail in Southern California, there&apos;s

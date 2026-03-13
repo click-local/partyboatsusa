@@ -124,7 +124,7 @@ export default function AdminDestinationPagesPage() {
       setPages((prev) => [page, ...prev]);
       setForm(emptyForm);
       setShowAdd(false);
-      toast.success("Page created — redirecting to editor...");
+      toast.success("Page created. Redirecting to editor...");
       window.location.href = `/admin/destination-pages/${page.id}`;
     } else {
       toast.error("Failed to create page");
@@ -179,7 +179,7 @@ export default function AdminDestinationPagesPage() {
         </div>
       </div>
 
-      {/* Quick-create form — just pick type + reference, then redirect to full editor */}
+      {/* Quick-create form - just pick type + reference, then redirect to full editor */}
       {showAdd && (
         <form onSubmit={handleAdd} className="bg-white rounded-xl border p-6 space-y-4">
           <div className="flex items-center justify-between">
