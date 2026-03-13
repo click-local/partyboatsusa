@@ -60,37 +60,37 @@ export default async function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative bg-primary text-white py-20 lg:py-32 overflow-hidden">
+      <section className="relative bg-[#0a1628] text-white py-24 lg:py-36 overflow-hidden">
         {hero?.heroImageUrl && (
-          <>
-            <Image
-              src={hero.heroImageUrl}
-              alt="Party boat fishing"
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-          </>
+          <Image
+            src={hero.heroImageUrl}
+            alt="Party boat fishing"
+            fill
+            className="object-cover opacity-40"
+            priority
+            sizes="100vw"
+          />
         )}
+        {/* Gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628]/60 via-[#0a1628]/40 to-[#0a1628]/80" />
         <div className="relative container mx-auto px-4 text-center">
-          <h1 className="text-4xl lg:text-6xl font-display font-bold mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 drop-shadow-lg">
             {hero?.heroHeadline || "Find the Best Party Boat Fishing Trips in the USA"}
           </h1>
-          <p className="text-lg lg:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg lg:text-xl text-white/85 mb-10 max-w-2xl mx-auto drop-shadow">
             {hero?.heroSubheadline || "Discover and book top-rated headboats and open party fishing charters across the United States."}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/search"
-              className="inline-flex items-center justify-center gap-2 bg-white text-primary px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white text-[#0a1628] px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-blue-50 transition-colors shadow-lg"
             >
               <Search className="h-5 w-5" />
               Browse Boats
             </Link>
             <Link
               href="/destinations"
-              className="inline-flex items-center justify-center gap-2 border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center gap-2 border-2 border-white/80 text-white px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-white/15 transition-colors shadow-lg backdrop-blur-sm"
             >
               <MapPin className="h-5 w-5" />
               Browse Destinations
