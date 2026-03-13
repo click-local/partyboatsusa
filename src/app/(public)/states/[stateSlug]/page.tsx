@@ -83,29 +83,58 @@ export default async function StatePage({ params }: Props) {
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="relative bg-primary text-white py-16">
-        {heroImage && (
-          <Image
-            src={formatImageUrl(heroImage)}
-            alt={`Fishing in ${state.name}`}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-        )}
-        <div className="absolute inset-0 bg-primary/70" />
-        <div className="relative container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-5xl font-display font-bold mb-3">
-            {destPage?.heroHeadline || `Party Boat Fishing in ${state.name}`}
-          </h1>
-          <p className="text-blue-100 text-lg max-w-2xl mx-auto">
-            {destPage?.heroSubheadline ||
-              `Discover ${boatData.total} party boat charters in ${state.name}`}
-          </p>
-        </div>
-      </section>
+      {/* Hero — Google Map with boat markers */}
+      {(() => {
+        const mappableBoats = boatData.boats
+          .filter((b) => b.latitude && b.longitude)
+          .map((b) => ({
+            id: b.id,
+            name: b.name,
+            slug: b.slug,
+            latitude: Number(b.latitude),
+            longitude: Number(b.longitude),
+            cityName: b.cityName,
+          }));
+
+        if (mappableBoats.length > 0) {
+          const avgLat = mappableBoats.reduce((s, b) => s + b.latitude, 0) / mappableBoats.length;
+          const avgLng = mappableBoats.reduce((s, b) => s + b.longitude, 0) / mappableBoats.length;
+
+          return (
+            <StateBoatsMap
+              boats={mappableBoats}
+              center={{ lat: avgLat, lng: avgLng }}
+              className="w-full h-[350px] md:h-[450px]"
+            />
+          );
+        }
+
+        // Fallback hero if no boats have coordinates
+        return (
+          <section className="relative bg-primary text-white py-16">
+            {heroImage && (
+              <Image
+                src={formatImageUrl(heroImage)}
+                alt={`Fishing in ${state.name}`}
+                fill
+                className="object-cover"
+                priority
+                sizes="100vw"
+              />
+            )}
+            <div className="absolute inset-0 bg-primary/70" />
+            <div className="relative container mx-auto px-4 text-center">
+              <h1 className="text-3xl md:text-5xl font-display font-bold mb-3">
+                {destPage?.heroHeadline || `Party Boat Fishing in ${state.name}`}
+              </h1>
+              <p className="text-blue-100 text-lg max-w-2xl mx-auto">
+                {destPage?.heroSubheadline ||
+                  `Discover ${boatData.total} party boat charters in ${state.name}`}
+              </p>
+            </div>
+          </section>
+        );
+      })()}
 
       <div className="container mx-auto px-4 py-12">
         {/* Popular Cities — always at top */}
@@ -124,33 +153,6 @@ export default async function StatePage({ params }: Props) {
             </div>
           </section>
         )}
-
-        {/* Map of Boat Locations */}
-        {(() => {
-          const mappableBoats = boatData.boats
-            .filter((b) => b.latitude && b.longitude)
-            .map((b) => ({
-              id: b.id,
-              name: b.name,
-              slug: b.slug,
-              latitude: Number(b.latitude),
-              longitude: Number(b.longitude),
-              cityName: b.cityName,
-            }));
-
-          if (mappableBoats.length === 0) return null;
-
-          const avgLat = mappableBoats.reduce((s, b) => s + b.latitude, 0) / mappableBoats.length;
-          const avgLng = mappableBoats.reduce((s, b) => s + b.longitude, 0) / mappableBoats.length;
-
-          return (
-            <StateBoatsMap
-              boats={mappableBoats}
-              stateName={state.name}
-              center={{ lat: avgLat, lng: avgLng }}
-            />
-          );
-        })()}
 
         {/* Content Blocks (boats blocks render inline with boat data) */}
         {destPage?.blocks && destPage.blocks.length > 0 && (
