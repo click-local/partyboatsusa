@@ -1,9 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Camera } from "lucide-react";
-import { LinkButton } from "@/components/link-button";
 import { Card } from "@/components/ui/card";
+import { BragBoardForm } from "@/components/brag-board-form";
 import { getBragBoardPhotos } from "@/lib/db/queries/brag-board";
+import { db } from "@/lib/db";
+import { boats } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -16,8 +19,28 @@ export const metadata: Metadata = {
   alternates: { canonical: "/brag-board" },
 };
 
-export default async function BragBoardPage() {
-  const { photos, total } = await getBragBoardPhotos(1, 48);
+interface Props {
+  searchParams: Promise<{ boat?: string }>;
+}
+
+export default async function BragBoardPage({ searchParams }: Props) {
+  const { boat: boatParam } = await searchParams;
+
+  const [{ photos, total }, boatsForSelect] = await Promise.all([
+    getBragBoardPhotos(1, 48),
+    db
+      .select({
+        id: boats.id,
+        name: boats.name,
+        cityName: boats.cityName,
+        stateCode: boats.stateCode,
+      })
+      .from(boats)
+      .where(eq(boats.isPublished, true))
+      .orderBy(asc(boats.name)),
+  ]);
+
+  const preselectedBoatId = boatParam ? Number(boatParam) : undefined;
 
   return (
     <>
@@ -42,10 +65,13 @@ export default async function BragBoardPage() {
             Show off your best catches! Browse photos from anglers across the
             country or share your own party boat fishing memories.
           </p>
-          <LinkButton href="/contact" variant="secondary">
-            <Camera className="h-4 w-4 mr-2" />
+          <a
+            href="#submit-your-catch"
+            className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors"
+          >
+            <Camera className="h-4 w-4" />
             Submit Your Catch
-          </LinkButton>
+          </a>
         </div>
       </section>
 
@@ -87,19 +113,23 @@ export default async function BragBoardPage() {
             </div>
           </>
         ) : (
-          <div className="text-center py-16">
-            <Camera className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-xl font-display font-bold mb-2">
-              No Photos Yet
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Be the first to share your catch on the brag board!
+          <div className="text-center py-8">
+            <Camera className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground">
+              No photos yet. Be the first to share your catch below!
             </p>
-            <LinkButton href="/contact">
-              Submit a Photo
-            </LinkButton>
           </div>
         )}
+      </section>
+
+      {/* Submission Form */}
+      <section id="submit-your-catch" className="bg-gray-50 border-t py-12">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <BragBoardForm
+            boats={boatsForSelect}
+            preselectedBoatId={preselectedBoatId}
+          />
+        </div>
       </section>
     </>
   );
