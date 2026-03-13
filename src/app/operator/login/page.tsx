@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Anchor, Loader2 } from "lucide-react";
+import { Anchor, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function OperatorLoginPage() {
@@ -25,10 +25,12 @@ function LoginContent() {
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register form
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regCompanyName, setRegCompanyName] = useState("");
   const [regContactName, setRegContactName] = useState("");
   const [regPhone, setRegPhone] = useState("");
@@ -85,11 +87,10 @@ function LoginContent() {
         return;
       }
 
-      toast.success("Account created! Welcome aboard!");
-      const redirect = claimBoatId
-        ? `/operator/dashboard?claimBoatId=${claimBoatId}`
-        : "/operator/dashboard";
-      window.location.href = redirect;
+      // Redirect to verification page instead of dashboard
+      const params = new URLSearchParams({ email: regEmail });
+      if (claimBoatId) params.set("claimBoatId", claimBoatId);
+      router.push(`/operator/verify-email?${params.toString()}`);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -157,14 +158,24 @@ function LoginContent() {
                 <label htmlFor="login-password" className="block text-sm font-medium mb-1">
                   Password
                 </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+                <div className="relative">
+                  <input
+                    id="login-password"
+                    type={showLoginPassword ? "text" : "password"}
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full rounded-lg border border-border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
@@ -231,16 +242,26 @@ function LoginContent() {
                 <label htmlFor="reg-password" className="block text-sm font-medium mb-1">
                   Password
                 </label>
-                <input
-                  id="reg-password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="Minimum 8 characters"
-                />
+                <div className="relative">
+                  <input
+                    id="reg-password"
+                    type={showRegPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full rounded-lg border border-border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Minimum 8 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showRegPassword ? "Hide password" : "Show password"}
+                  >
+                    {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label htmlFor="reg-phone" className="block text-sm font-medium mb-1">

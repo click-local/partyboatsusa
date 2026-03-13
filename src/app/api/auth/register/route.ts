@@ -36,12 +36,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
+    const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
     // Create Supabase Auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { role: "operator" },
+        emailRedirectTo: `${origin}/api/auth/callback`,
       },
     });
 
