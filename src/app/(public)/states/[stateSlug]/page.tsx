@@ -9,6 +9,7 @@ import { getBoatsByState } from "@/lib/db/queries/boats";
 import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-pages";
 import { formatImageUrl } from "@/lib/utils";
 import { ContentBlockRenderer } from "@/components/content-blocks";
+import { StateBoatsMap } from "@/components/map/state-boats-map";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
@@ -123,6 +124,33 @@ export default async function StatePage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Map of Boat Locations */}
+        {(() => {
+          const mappableBoats = boatData.boats
+            .filter((b) => b.latitude && b.longitude)
+            .map((b) => ({
+              id: b.id,
+              name: b.name,
+              slug: b.slug,
+              latitude: Number(b.latitude),
+              longitude: Number(b.longitude),
+              cityName: b.cityName,
+            }));
+
+          if (mappableBoats.length === 0) return null;
+
+          const avgLat = mappableBoats.reduce((s, b) => s + b.latitude, 0) / mappableBoats.length;
+          const avgLng = mappableBoats.reduce((s, b) => s + b.longitude, 0) / mappableBoats.length;
+
+          return (
+            <StateBoatsMap
+              boats={mappableBoats}
+              stateName={state.name}
+              center={{ lat: avgLat, lng: avgLng }}
+            />
+          );
+        })()}
 
         {/* Content Blocks (boats blocks render inline with boat data) */}
         {destPage?.blocks && destPage.blocks.length > 0 && (

@@ -15,6 +15,7 @@ import { ReviewSection } from "@/components/review-section";
 import { getBoatBySlug, getNearbyBoats, getFleetBoats } from "@/lib/db/queries/boats";
 import { getReviewsByBoat, getBoatRatingStats } from "@/lib/db/queries/reviews";
 import { getBragBoardPhotosByBoat } from "@/lib/db/queries/brag-board";
+import { BoatLocationMap } from "@/components/map/boat-location-map";
 import { formatImageUrl, formatPrice } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -489,18 +490,25 @@ export default async function BoatDetailPage({ params }: Props) {
                 </CardContent>
               </Card>
 
-              {/* Directions link */}
+              {/* Map + Directions */}
               {boat.latitude && boat.longitude && (
-                <LinkButton
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${boat.latitude},${boat.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outline"
-                  className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5"
-                >
-                  <MapPin className="h-5 w-5 text-primary mr-2" />
-                  <span className="font-bold">Get Directions</span>
-                </LinkButton>
+                <div className="space-y-3">
+                  <BoatLocationMap
+                    latitude={Number(boat.latitude)}
+                    longitude={Number(boat.longitude)}
+                    boatName={boat.name}
+                  />
+                  <LinkButton
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${boat.latitude},${boat.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outline"
+                    className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5"
+                  >
+                    <MapPin className="h-5 w-5 text-primary mr-2" />
+                    <span className="font-bold">Get Directions</span>
+                  </LinkButton>
+                </div>
               )}
             </div>
           </div>
