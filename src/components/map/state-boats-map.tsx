@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, Marker, InfoWindow } from "@vis.gl/react-google-maps";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 
@@ -42,7 +42,6 @@ export function StateBoatsMap({ boats, stateName, center }: StateBoatsMapProps) 
           <Map
             defaultCenter={center}
             defaultZoom={7}
-            mapId="state-boats"
             gestureHandling="cooperative"
             disableDefaultUI={false}
             zoomControl={true}
@@ -51,7 +50,7 @@ export function StateBoatsMap({ boats, stateName, center }: StateBoatsMapProps) 
             fullscreenControl={true}
           >
             {boats.map((boat) => (
-              <AdvancedMarker
+              <Marker
                 key={boat.id}
                 position={{ lat: boat.latitude, lng: boat.longitude }}
                 title={boat.name}

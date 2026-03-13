@@ -1,6 +1,6 @@
 "use client";
 
-import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 
 interface BoatLocationMapProps {
   latitude: number;
@@ -19,7 +19,6 @@ export function BoatLocationMap({ latitude, longitude, boatName }: BoatLocationM
         <Map
           defaultCenter={{ lat: latitude, lng: longitude }}
           defaultZoom={13}
-          mapId="boat-location"
           gestureHandling="cooperative"
           disableDefaultUI={false}
           zoomControl={true}
@@ -27,7 +26,7 @@ export function BoatLocationMap({ latitude, longitude, boatName }: BoatLocationM
           mapTypeControl={false}
           fullscreenControl={false}
         >
-          <AdvancedMarker
+          <Marker
             position={{ lat: latitude, lng: longitude }}
             title={boatName}
           />
