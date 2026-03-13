@@ -121,7 +121,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
           }`}
         >
           {/* Top bar: Logo + Close */}
-          <div className="flex items-center justify-between px-6 py-5">
+          <div className="flex items-center justify-between px-4 py-3 mx-4 mt-3 rounded-xl bg-white/10 backdrop-blur-md">
             <Link
               href="/"
               onClick={() => setMobileOpen(false)}
@@ -131,7 +131,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
                 <img
                   src={logoUrl}
                   alt="Party Boats USA"
-                  className="h-10 w-auto brightness-0 invert"
+                  className="h-10 w-auto"
                 />
               ) : (
                 <>
