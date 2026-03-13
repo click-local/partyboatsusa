@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Check, X, Star, ArrowRight, CalendarSync, Globe, Zap } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  X,
+  Star,
+  CalendarSync,
+  Globe,
+  Zap,
+  CheckCircle,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Operator {
@@ -30,6 +40,8 @@ const proFeatures = [
 export default function UpgradePage() {
   const [operator, setOperator] = useState<Operator | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     fetch("/api/operator/profile")
@@ -38,6 +50,24 @@ export default function UpgradePage() {
       .catch(() => toast.error("Failed to load data"))
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleUpgradeRequest(hasGoFishAccount: boolean) {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/operator/upgrade-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hasGoFishAccount }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      setSubmitted(true);
+      toast.success("Upgrade request submitted! We'll be in touch shortly.");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -136,22 +166,37 @@ export default function UpgradePage() {
                 Current Tier
               </span>
             </div>
+          ) : submitted ? (
+            <div className="pt-2">
+              <div className="flex items-center justify-center gap-2 w-full bg-green-50 text-green-700 py-3 rounded-lg text-sm font-medium border border-green-200">
+                <CheckCircle className="h-4 w-4" />
+                Request submitted &mdash; we&apos;ll be in touch!
+              </div>
+            </div>
           ) : (
             <div className="pt-2 space-y-2">
-              <a
-                href="mailto:support@partyboatsusa.com?subject=Pro%20Upgrade%20%E2%80%93%20Link%20My%20GoFish%20Account"
-                className="flex items-center justify-center gap-2 w-full bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              <button
+                onClick={() => handleUpgradeRequest(true)}
+                disabled={submitting}
+                className="flex items-center justify-center gap-2 w-full bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                I Have a GoFish Account <ArrowRight className="h-4 w-4" />
-              </a>
-              <a
-                href="https://gofishvip.com/demo"
-                target="_blank"
-                rel="noopener"
-                className="flex items-center justify-center gap-2 w-full border border-primary text-primary py-2.5 rounded-lg text-sm font-medium hover:bg-primary/5 transition-colors"
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "I Have a GoFish Account"
+                )}
+              </button>
+              <button
+                onClick={() => handleUpgradeRequest(false)}
+                disabled={submitting}
+                className="flex items-center justify-center gap-2 w-full border border-primary text-primary py-2.5 rounded-lg text-sm font-medium hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
-                Set Up a GoFish Demo
-              </a>
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "I Need a GoFish Account"
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -198,29 +243,43 @@ export default function UpgradePage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="pt-4 border-t space-y-3">
-            <h3 className="font-semibold text-sm">Ready to upgrade?</h3>
-            <p className="text-sm text-muted-foreground">
-              If you already have a GoFish account, email us at{" "}
-              <a
-                href="mailto:support@partyboatsusa.com?subject=Pro%20Upgrade%20%E2%80%93%20Link%20My%20GoFish%20Account"
-                className="text-primary hover:underline font-medium"
-              >
-                support@partyboatsusa.com
-              </a>{" "}
-              and we&apos;ll link it to your listing. If you don&apos;t have an account yet,{" "}
-              <a
-                href="https://gofishvip.com/demo"
-                target="_blank"
-                rel="noopener"
-                className="text-primary hover:underline font-medium"
-              >
-                schedule a quick demo with GoFish
-              </a>{" "}
-              to get started.
-            </p>
-          </div>
+      {/* About GoFish */}
+      {!isPro && (
+        <div className="bg-gray-50 rounded-xl border p-6 space-y-3">
+          <h2 className="text-lg font-display font-bold">
+            About GoFish
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Party Boats USA partners with{" "}
+            <a
+              href="https://GoFishVIP.com"
+              target="_blank"
+              rel="noopener"
+              className="text-primary hover:underline font-medium"
+            >
+              GoFish
+            </a>{" "}
+            to power direct bookings on our platform. GoFish is a booking and
+            management platform built specifically for fishing charter operators.
+            It handles online reservations, payments, waivers, and customer
+            communication &mdash; all in one place. By linking your GoFish account,
+            anglers browsing Party Boats USA can book your trips instantly without
+            leaving your listing.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            You can learn more or create an account at{" "}
+            <a
+              href="https://GoFishVIP.com"
+              target="_blank"
+              rel="noopener"
+              className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+            >
+              GoFishVIP.com <ExternalLink className="h-3 w-3" />
+            </a>
+          </p>
         </div>
       )}
     </div>
