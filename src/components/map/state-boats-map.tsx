@@ -30,6 +30,16 @@ export function StateBoatsMap({ boats, center, className }: StateBoatsMapProps) 
 
   if (!API_KEY || boats.length === 0) return null;
 
+  // Offset boats that share the exact same coordinates so all markers are visible
+  const offsetBoats = boats.map((boat, i) => {
+    const dupes = boats.filter(
+      (b, j) => j < i && b.latitude === boat.latitude && b.longitude === boat.longitude
+    );
+    if (dupes.length === 0) return boat;
+    const offset = dupes.length * 0.003;
+    return { ...boat, latitude: boat.latitude + offset, longitude: boat.longitude + offset };
+  });
+
   return (
     <APIProvider apiKey={API_KEY}>
       <div className={className || "w-full h-[400px]"}>
@@ -43,7 +53,7 @@ export function StateBoatsMap({ boats, center, className }: StateBoatsMapProps) 
           mapTypeControl={false}
           fullscreenControl={true}
         >
-          {boats.map((boat) => (
+          {offsetBoats.map((boat) => (
             <Marker
               key={boat.id}
               position={{ lat: boat.latitude, lng: boat.longitude }}
