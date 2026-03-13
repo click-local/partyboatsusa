@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { states, cities, boats } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export async function getStates() {
   return db.select().from(states).orderBy(states.name);
@@ -36,6 +36,24 @@ export async function getCitiesByState(stateCode: string) {
     .innerJoin(boats, sql`lower(${boats.cityName}) = lower(${cities.name}) AND ${boats.stateCode} = ${cities.stateCode}`)
     .where(sql`${cities.stateCode} = ${stateCode} AND ${boats.isPublished} = true`)
     .orderBy(cities.name);
+}
+
+export async function getAllStatesWithBoatCounts() {
+  return db
+    .select({
+      id: states.id,
+      name: states.name,
+      code: states.code,
+      slug: states.slug,
+      boatCount: sql<number>`count(${boats.id})`.as("boat_count"),
+    })
+    .from(states)
+    .leftJoin(
+      boats,
+      and(eq(boats.stateCode, states.code), eq(boats.isPublished, true))
+    )
+    .groupBy(states.id, states.name, states.code, states.slug)
+    .orderBy(states.name);
 }
 
 export async function getCityBySlug(slug: string) {
