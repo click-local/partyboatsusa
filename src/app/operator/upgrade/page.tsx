@@ -216,8 +216,8 @@ export default function UpgradePage() {
               </div>
               <h3 className="font-semibold text-sm">We Do the Heavy Lifting</h3>
               <p className="text-sm text-muted-foreground">
-                Once your GoFish account is linked, our team integrates everything
-                for you. Customers can book directly from your Party Boats USA listing.
+                Once you have a GoFish account, our team will link and integrate
+                it for you. Customers can then book directly from your Party Boats USA listing.
               </p>
             </div>
 

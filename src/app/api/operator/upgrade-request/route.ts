@@ -4,7 +4,7 @@ import { getOperator } from "@/lib/auth/get-operator";
 import { logOperatorContact } from "@/lib/db/queries/operators";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const ADMIN_EMAIL = "support@partyboatsusa.com";
+const NOTIFY_EMAILS = ["support@partyboatsusa.com", "support@gofishvip.com"];
 
 export async function POST(request: NextRequest) {
   const operator = await getOperator();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   try {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>",
-      to: ADMIN_EMAIL,
+      to: NOTIFY_EMAILS,
       subject: `Pro Upgrade Request - ${operator.companyName}`,
       html: `
         <h2>New Pro Upgrade Request</h2>
