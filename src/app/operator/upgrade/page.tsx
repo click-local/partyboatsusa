@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Check, X, Star, ArrowRight } from "lucide-react";
+import { Loader2, Check, X, Star, ArrowRight, CalendarSync, Globe, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 interface Operator {
@@ -14,27 +14,17 @@ const basicFeatures = [
   { name: "Phone number displayed", included: true },
   { name: "Email displayed", included: true },
   { name: "Website link", included: false },
-  { name: "Booking button", included: false },
+  { name: "Direct booking from your listing", included: false },
   { name: "Social media links", included: false },
-  { name: "Search boost", included: false },
+  { name: "Search priority boost", included: false },
 ];
 
 const proFeatures = [
-  { name: "Boat listing on Party Boats USA", included: true },
-  { name: "Phone number displayed", included: true },
-  { name: "Email displayed", included: true },
+  { name: "Everything in Basic", included: true },
   { name: "Website link", included: true },
-  { name: "Booking button", included: true },
+  { name: "Direct booking from your listing", included: true },
   { name: "Social media links", included: true },
-  { name: "Search boost (+10)", included: true },
-];
-
-const proRequirements = [
-  "Complete your operator profile (company name, contact info, phone)",
-  "Have at least one published boat listing",
-  "Upload a high-quality primary photo for each boat",
-  "Add a detailed description for each boat listing",
-  "Maintain accurate pricing and availability information",
+  { name: "Search priority boost", included: true },
 ];
 
 export default function UpgradePage() {
@@ -64,12 +54,11 @@ export default function UpgradePage() {
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-display font-bold mb-2">
-          Membership Tiers
+          Upgrade to Pro
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Upgrade your listing by meeting the requirements below. All tiers are
-          free — Pro status is earned by keeping your listing complete and up to
-          date.
+          Let customers book directly from your Party Boats USA listing.
+          Pro status is free &mdash; just link your GoFish account and we handle the rest.
         </p>
       </div>
 
@@ -86,7 +75,7 @@ export default function UpgradePage() {
           <div>
             <h3 className="text-lg font-semibold">Basic</h3>
             <p className="text-sm text-muted-foreground">
-              Standard listing — available to all operators
+              Get discovered by anglers searching for party boats
             </p>
           </div>
           <div>
@@ -119,18 +108,18 @@ export default function UpgradePage() {
         <div className={`bg-white rounded-xl border p-6 space-y-4 relative ${isPro ? "border-primary border-2" : "border-border"}`}>
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
             <Star className="h-3 w-3" />
-            Enhanced
+            Recommended
           </div>
           <div>
             <h3 className="text-lg font-semibold">Pro</h3>
             <p className="text-sm text-muted-foreground">
-              Full visibility — earned by meeting requirements
+              Accept bookings directly from your listing
             </p>
           </div>
           <div>
             <span className="text-3xl font-bold">Free</span>
             <span className="text-muted-foreground text-sm ml-1">
-              (requirements-based)
+              with GoFish
             </span>
           </div>
           <ul className="space-y-2 text-sm">
@@ -148,49 +137,88 @@ export default function UpgradePage() {
               </span>
             </div>
           ) : (
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
               <a
-                href="mailto:support@partyboatsusa.com?subject=Pro%20Tier%20Upgrade%20Request"
-                className="flex items-center justify-center gap-2 w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90"
+                href="mailto:support@partyboatsusa.com?subject=Pro%20Upgrade%20%E2%80%93%20Link%20My%20GoFish%20Account"
+                className="flex items-center justify-center gap-2 w-full bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
               >
-                Request Upgrade <ArrowRight className="h-4 w-4" />
+                I Have a GoFish Account <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="https://gofishvip.com/demo"
+                target="_blank"
+                rel="noopener"
+                className="flex items-center justify-center gap-2 w-full border border-primary text-primary py-2.5 rounded-lg text-sm font-medium hover:bg-primary/5 transition-colors"
+              >
+                Set Up a GoFish Demo
               </a>
             </div>
           )}
         </div>
       </div>
 
-      {/* Pro Requirements */}
+      {/* How It Works */}
       {!isPro && (
-        <div className="bg-white rounded-xl border p-6 space-y-4">
+        <div className="bg-white rounded-xl border p-6 space-y-6">
           <h2 className="text-xl font-display font-bold">
-            How to Earn Pro Status
+            How Pro Works
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Complete the following requirements and contact us to upgrade your
-            listing to Pro. Our team will review your account and activate Pro
-            features.
-          </p>
-          <ol className="space-y-3">
-            {proRequirements.map((req, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mt-0.5">
-                  {i + 1}
-                </span>
-                <span>{req}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="pt-2 border-t">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Globe className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm">We Do the Heavy Lifting</h3>
+              <p className="text-sm text-muted-foreground">
+                Once your GoFish account is linked, our team integrates everything
+                for you. Customers can book directly from your Party Boats USA listing.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <CalendarSync className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm">Works With Your Existing Setup</h3>
+              <p className="text-sm text-muted-foreground">
+                Already using another booking platform on your website? No problem.
+                GoFish offers two-way sync with Google Calendar so nothing conflicts.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm">No Changes to Your Website</h3>
+              <p className="text-sm text-muted-foreground">
+                You don&apos;t need to add anything to your personal website.
+                Bookings happen right here on Party Boats USA through your listing.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t space-y-3">
+            <h3 className="font-semibold text-sm">Ready to upgrade?</h3>
             <p className="text-sm text-muted-foreground">
-              Once you&apos;ve met these requirements, email us at{" "}
+              If you already have a GoFish account, email us at{" "}
               <a
-                href="mailto:support@partyboatsusa.com?subject=Pro%20Tier%20Upgrade%20Request"
+                href="mailto:support@partyboatsusa.com?subject=Pro%20Upgrade%20%E2%80%93%20Link%20My%20GoFish%20Account"
                 className="text-primary hover:underline font-medium"
               >
                 support@partyboatsusa.com
               </a>{" "}
-              and we&apos;ll upgrade your account.
+              and we&apos;ll link it to your listing. If you don&apos;t have an account yet,{" "}
+              <a
+                href="https://gofishvip.com/demo"
+                target="_blank"
+                rel="noopener"
+                className="text-primary hover:underline font-medium"
+              >
+                schedule a quick demo with GoFish
+              </a>{" "}
+              to get started.
             </p>
           </div>
         </div>
