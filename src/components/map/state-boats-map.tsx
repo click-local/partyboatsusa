@@ -30,6 +30,22 @@ export function StateBoatsMap({ boats, center, className }: StateBoatsMapProps) 
 
   if (!API_KEY || boats.length === 0) return null;
 
+  // Slightly offset markers that share the same coordinates so both are clickable.
+  // The original coordinates are preserved for the info window / directions link.
+  const displayBoats = boats.map((boat, i) => {
+    const dupeIndex = boats
+      .slice(0, i)
+      .filter((b) => b.latitude === boat.latitude && b.longitude === boat.longitude).length;
+    if (dupeIndex === 0) return { ...boat, displayLat: boat.latitude, displayLng: boat.longitude };
+    // ~200m offset per duplicate — enough to click, close enough to be accurate
+    const angle = (dupeIndex * 90) * (Math.PI / 180);
+    return {
+      ...boat,
+      displayLat: boat.latitude + 0.002 * Math.cos(angle),
+      displayLng: boat.longitude + 0.002 * Math.sin(angle),
+    };
+  });
+
   return (
     <APIProvider apiKey={API_KEY}>
       <div className={className || "w-full h-[400px]"}>
@@ -43,10 +59,10 @@ export function StateBoatsMap({ boats, center, className }: StateBoatsMapProps) 
           mapTypeControl={false}
           fullscreenControl={true}
         >
-          {boats.map((boat) => (
+          {displayBoats.map((boat) => (
             <Marker
               key={boat.id}
-              position={{ lat: boat.latitude, lng: boat.longitude }}
+              position={{ lat: boat.displayLat, lng: boat.displayLng }}
               title={boat.name}
               onClick={() => handleMarkerClick(boat)}
             />
