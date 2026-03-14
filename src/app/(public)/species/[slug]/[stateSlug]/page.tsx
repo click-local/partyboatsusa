@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Fish, MapPin, Tag } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
-import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
+import { getBoatsBySpeciesAndState, getAllSpeciesStateCombinations, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
@@ -11,49 +11,55 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 export const revalidate = 1800;
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; stateSlug: string }>;
   searchParams: Promise<{ page?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await getBoatsBySpecies(slug);
-  if (!data) return { title: "Species Not Found" };
+export async function generateStaticParams() {
+  const combos = await getAllSpeciesStateCombinations();
+  return combos.map((c) => ({ slug: c.speciesSlug, stateSlug: c.stateSlug }));
+}
 
-  const sp = data.species;
-  const title = `${sp.name} Fishing - Party Boat Charters | PartyBoatsUSA`;
-  const desc = sp.description
-    ? sp.description.slice(0, 155)
-    : `Find ${data.total} party boat fishing charters targeting ${sp.name} across the USA. Compare prices, read reviews, and book your trip.`;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug, stateSlug } = await params;
+  const data = await getBoatsBySpeciesAndState(slug, stateSlug);
+  if (!data) return { title: "Not Found" };
+
+  const { species: sp, state: st } = data;
+  const title = `${sp.name} Fishing in ${st.name} - Party Boat Charters | PartyBoatsUSA`;
+  const desc = `Find ${data.total} party boat fishing charters targeting ${sp.name} in ${st.name}. Compare prices, read reviews, and book your ${sp.name} fishing trip today.`;
 
   return {
     title,
     description: desc,
-    alternates: { canonical: `/species/${slug}` },
-    openGraph: { title, description: desc, url: `${SITE_URL}/species/${slug}`, type: "website" },
+    alternates: { canonical: `/species/${slug}/${stateSlug}` },
+    openGraph: {
+      title,
+      description: desc,
+      url: `${SITE_URL}/species/${slug}/${stateSlug}`,
+      type: "website",
+      ...(sp.imageUrl ? { images: [{ url: sp.imageUrl, alt: sp.name }] } : {}),
+    },
   };
 }
 
-export default async function SpeciesDetailPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+export default async function SpeciesStatePage({ params, searchParams }: Props) {
+  const { slug, stateSlug } = await params;
   const { page: pageParam } = await searchParams;
   const currentPage = Math.max(1, Number(pageParam) || 1);
 
-  const data = await getBoatsBySpecies(slug, currentPage, 50);
+  const data = await getBoatsBySpeciesAndState(slug, stateSlug, currentPage, 50);
   if (!data) notFound();
 
-  const { species: sp, aliases } = data;
-  const [tierBadges, statesList] = await Promise.all([
-    getTierBadgesForBoats(data.boats.map((b) => b.operatorId)),
-    getStatesForSpecies(slug),
-  ]);
+  const { species: sp, state: st, aliases, otherStates } = data;
+  const tierBadges = await getTierBadgesForBoats(data.boats.map((b) => b.operatorId));
 
   return (
     <>
       {/* Breadcrumbs */}
       <div className="bg-gray-50 border-b">
         <div className="container mx-auto px-4 py-3">
-          <nav className="flex items-center gap-1 text-sm text-muted-foreground">
+          <nav className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
             <Link href="/" className="hover:text-primary">Home</Link>
             <ChevronRight className="h-3 w-3" />
             <Link href="/species" className="hover:text-primary">Fish Species</Link>
@@ -64,7 +70,9 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
                 <ChevronRight className="h-3 w-3" />
               </>
             )}
-            <span className="text-foreground font-medium">{sp.name}</span>
+            <Link href={`/species/${slug}`} className="hover:text-primary">{sp.name}</Link>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-foreground font-medium">{st.name}</span>
           </nav>
         </div>
       </div>
@@ -87,13 +95,13 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
               </div>
             )}
             <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
-              {sp.name} Fishing Charters
+              {sp.name} Fishing in {st.name}
             </h1>
             {sp.scientificName && (
               <p className="text-blue-200 italic text-sm mb-3">{sp.scientificName}</p>
             )}
             <p className="text-blue-100 max-w-2xl mx-auto">
-              Browse {data.total} party boat charters targeting {sp.name} across the United States.
+              Browse {data.total} party boat charter{data.total !== 1 ? "s" : ""} targeting {sp.name} in {st.name}.
             </p>
           </div>
         </div>
@@ -114,6 +122,10 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
                     <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
                   </div>
                 )}
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>State: <Link href={`/states/${stateSlug}`} className="font-medium text-foreground hover:text-primary">{st.name}</Link></span>
+                </div>
                 {aliases.length > 0 && (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Tag className="h-4 w-4" />
@@ -129,7 +141,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
       {/* Boat Grid */}
       <div className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-display font-bold mb-6">
-          Boats Targeting {sp.name}
+          {sp.name} Charters in {st.name}
           <span className="text-muted-foreground font-normal text-lg ml-2">
             ({data.total})
           </span>
@@ -147,7 +159,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
               <div className="flex items-center justify-center gap-2 mt-10">
                 {currentPage > 1 && (
                   <Link
-                    href={`/species/${slug}?page=${currentPage - 1}`}
+                    href={`/species/${slug}/${stateSlug}?page=${currentPage - 1}`}
                     className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
                   >
                     <ChevronRight className="h-4 w-4 rotate-180" />
@@ -159,7 +171,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
                 </span>
                 {currentPage < data.totalPages && (
                   <Link
-                    href={`/species/${slug}?page=${currentPage + 1}`}
+                    href={`/species/${slug}/${stateSlug}?page=${currentPage + 1}`}
                     className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
                   >
                     Next
@@ -172,29 +184,31 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              No boats targeting {sp.name} listed yet. Check back soon!
+              No boats targeting {sp.name} in {st.name} listed yet. Check back soon!
             </p>
+            <Link href={`/species/${slug}`} className="text-primary hover:underline mt-2 inline-block">
+              View all {sp.name} charters nationwide
+            </Link>
           </div>
         )}
       </div>
 
-      {/* Browse by State */}
-      {statesList.length > 0 && (
+      {/* Other States Section */}
+      {otherStates.length > 0 && (
         <section className="bg-gray-50 border-t">
           <div className="container mx-auto px-4 py-10">
             <h2 className="text-xl font-display font-bold mb-4">
-              {sp.name} Fishing by State
+              {sp.name} Fishing in Other States
             </h2>
             <div className="flex flex-wrap gap-2">
-              {statesList.map((s) => (
+              {otherStates.map((os) => (
                 <Link
-                  key={s.stateSlug}
-                  href={`/species/${slug}/${s.stateSlug}`}
+                  key={os.stateCode}
+                  href={`/species/${slug}/${os.stateSlug}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
                 >
                   <MapPin className="h-3 w-3" />
-                  {s.stateName}
-                  <span className="text-muted-foreground">({s.boatCount})</span>
+                  {os.stateName}
                 </Link>
               ))}
             </div>
@@ -212,8 +226,11 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
               { "@type": "ListItem", position: 2, name: "Fish Species", item: `${SITE_URL}/species` },
-              ...(sp.categorySlug ? [{ "@type": "ListItem", position: 3, name: sp.categoryName, item: `${SITE_URL}/species/category/${sp.categorySlug}` }] : []),
+              ...(sp.categorySlug
+                ? [{ "@type": "ListItem", position: 3, name: sp.categoryName, item: `${SITE_URL}/species/category/${sp.categorySlug}` }]
+                : []),
               { "@type": "ListItem", position: sp.categorySlug ? 4 : 3, name: sp.name, item: `${SITE_URL}/species/${slug}` },
+              { "@type": "ListItem", position: sp.categorySlug ? 5 : 4, name: st.name, item: `${SITE_URL}/species/${slug}/${stateSlug}` },
             ],
           }),
         }}
@@ -227,7 +244,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              name: `${sp.name} Fishing Charters`,
+              name: `${sp.name} Fishing Charters in ${st.name}`,
               numberOfItems: data.total,
               itemListElement: data.boats.map((boat, i) => ({
                 "@type": "ListItem",

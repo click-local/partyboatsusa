@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { boats, states, cities, destinationPages, tripTypes } from "@/lib/db/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
-import { getAllSpeciesWithBoatCounts } from "@/lib/db/queries/boats";
+import { getAllSpeciesWithBoatCounts, getAllSpeciesStateCombinations } from "@/lib/db/queries/boats";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
 
@@ -140,5 +140,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not connected yet
   }
 
-  return [...staticPages, ...boatPages, ...statePages, ...cityPages, ...tripTypePages, ...speciesPages];
+  // Species-by-state pages (e.g., /species/red-snapper/florida)
+  let speciesStatePages: MetadataRoute.Sitemap = [];
+  try {
+    const combos = await getAllSpeciesStateCombinations();
+    speciesStatePages = combos.map((c) => ({
+      url: `${SITE_URL}/species/${c.speciesSlug}/${c.stateSlug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+      lastModified: now,
+    }));
+  } catch {
+    // DB not connected yet
+  }
+
+  return [...staticPages, ...boatPages, ...statePages, ...cityPages, ...tripTypePages, ...speciesPages, ...speciesStatePages];
 }

@@ -349,11 +349,23 @@ export default async function BoatDetailPage({ params }: Props) {
             {boat.species && boat.species.length > 0 && (
               <div>
                 <h2 className="text-2xl font-display font-bold mb-4">Target Species</h2>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                   {boat.species.map((sp) => (
-                    <Link key={sp.id} href={`/species/${sp.slug}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-gray-50/50 hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                      <Fish className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm">{sp.name}</span>
+                    <Link key={sp.id} href={`/species/${sp.slug}`} className="group flex flex-col items-center gap-1.5">
+                      {sp.imageUrl ? (
+                        <Image
+                          src={sp.imageUrl}
+                          alt={sp.name}
+                          width={120}
+                          height={80}
+                          className="w-full h-auto object-contain group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full aspect-[3/2] flex items-center justify-center">
+                          <Fish className="h-8 w-8 text-gray-300" />
+                        </div>
+                      )}
+                      <span className="font-medium text-xs text-center text-muted-foreground group-hover:text-primary transition-colors leading-tight">{sp.name}</span>
                     </Link>
                   ))}
                 </div>

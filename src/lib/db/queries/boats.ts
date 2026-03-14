@@ -486,6 +486,117 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
   }
 }
 
+export async function getBoatsBySpeciesAndState(speciesSlug: string, stateSlug: string, page = 1, limit = 50) {
+  const offset = (page - 1) * limit;
+
+  try {
+    // Get species info
+    const [sp] = await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        scientificName: species.scientificName,
+        description: species.description,
+        imageUrl: species.imageUrl,
+        categoryId: species.categoryId,
+        categoryName: speciesCategories.name,
+        categorySlug: speciesCategories.slug,
+      })
+      .from(species)
+      .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
+      .where(eq(species.slug, speciesSlug))
+      .limit(1);
+    if (!sp) return null;
+
+    // Get state info
+    const [st] = await db.select().from(states).where(eq(states.slug, stateSlug)).limit(1);
+    if (!st) return null;
+
+    // Get aliases
+    const aliases = await db
+      .select({ name: speciesAliases.name })
+      .from(speciesAliases)
+      .where(eq(speciesAliases.speciesId, sp.id));
+
+    // Get boats matching both species and state
+    const where = and(
+      eq(boats.isPublished, true),
+      eq(boats.stateCode, st.code),
+      sql`${boats.id} IN (SELECT boat_id FROM boat_species WHERE species_id = ${sp.id})`
+    );
+
+    const [results, countResult] = await Promise.all([
+      db.select().from(boats).where(where).orderBy(desc(boats.rating)).limit(limit).offset(offset),
+      db.select({ count: sql<number>`count(*)` }).from(boats).where(where),
+    ]);
+
+    // Get other states where this species has boats (for cross-linking)
+    const otherStates = await db
+      .selectDistinct({
+        stateName: states.name,
+        stateSlug: states.slug,
+        stateCode: states.code,
+      })
+      .from(boatSpecies)
+      .innerJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
+      .innerJoin(states, eq(boats.stateCode, states.code))
+      .where(and(eq(boatSpecies.speciesId, sp.id), sql`${states.code} != ${st.code}`))
+      .orderBy(states.name);
+
+    return {
+      species: sp,
+      state: st,
+      aliases: aliases.map((a) => a.name),
+      boats: results,
+      total: Number(countResult[0]?.count ?? 0),
+      page,
+      totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
+      otherStates,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getAllSpeciesStateCombinations() {
+  try {
+    return await db
+      .selectDistinct({
+        speciesSlug: species.slug,
+        stateSlug: states.slug,
+      })
+      .from(boatSpecies)
+      .innerJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
+      .innerJoin(species, eq(boatSpecies.speciesId, species.id))
+      .innerJoin(states, eq(boats.stateCode, states.code));
+  } catch {
+    return [];
+  }
+}
+
+export async function getStatesForSpecies(speciesSlug: string) {
+  try {
+    const [sp] = await db.select({ id: species.id }).from(species).where(eq(species.slug, speciesSlug)).limit(1);
+    if (!sp) return [];
+
+    return await db
+      .select({
+        stateName: states.name,
+        stateSlug: states.slug,
+        boatCount: sql<number>`count(DISTINCT ${boats.id})`.as("boat_count"),
+      })
+      .from(boatSpecies)
+      .innerJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
+      .innerJoin(states, eq(boats.stateCode, states.code))
+      .where(eq(boatSpecies.speciesId, sp.id))
+      .groupBy(states.name, states.slug)
+      .orderBy(states.name);
+  } catch {
+    return [];
+  }
+}
+
 export async function getSpeciesByCategory(categorySlug: string) {
   try {
     const [cat] = await db
