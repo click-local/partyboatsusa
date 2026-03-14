@@ -3,33 +3,56 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Ship, Users, Settings, Mail, Layers, Crown,
-  BarChart3, Map, GitCompare, LogOut, Anchor, Menu, X, FileText, Star, ShieldCheck, Camera, MessageSquare,
+  Ship, Users, Settings, Mail, Layers, Crown,
+  BarChart3, Map, GitCompare, LogOut, Anchor, Menu, X, Star, ShieldCheck, Camera, MessageSquare,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { AdminPermission } from "@/lib/db/schema";
 
-const NAV_ITEMS = [
-  { href: "/admin/boats", label: "Boats", icon: Ship },
-  { href: "/admin/claims", label: "Claim Requests", icon: ShieldCheck },
-  { href: "/admin/brag-board", label: "Brag Board", icon: Camera },
-  { href: "/admin/reviews", label: "Reviews", icon: MessageSquare },
-  { href: "/admin/crm", label: "CRM", icon: Users },
-  { href: "/admin/destination-pages", label: "Destinations", icon: Map },
-  { href: "/admin/site-settings", label: "Site Settings", icon: Settings },
-  { href: "/admin/system-emails", label: "Email Templates", icon: Mail },
-  { href: "/admin/options", label: "Options", icon: Layers },
-  { href: "/admin/membership-tiers", label: "Membership Tiers", icon: Crown },
-  { href: "/admin/operator-tiers", label: "Operator Tiers", icon: Star },
-  { href: "/admin/feature-comparison", label: "Features", icon: GitCompare },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/users", label: "Admin Users", icon: Users },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof Ship;
+  permission?: AdminPermission;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/admin/boats", label: "Boats", icon: Ship, permission: "boats" },
+  { href: "/admin/claims", label: "Claim Requests", icon: ShieldCheck, permission: "boats" },
+  { href: "/admin/brag-board", label: "Brag Board", icon: Camera, permission: "boats" },
+  { href: "/admin/reviews", label: "Reviews", icon: MessageSquare, permission: "boats" },
+  { href: "/admin/crm", label: "CRM", icon: Users, permission: "crm" },
+  { href: "/admin/destination-pages", label: "Destinations", icon: Map, permission: "destination-pages" },
+  { href: "/admin/site-settings", label: "Site Settings", icon: Settings, permission: "site-settings" },
+  { href: "/admin/system-emails", label: "Email Templates", icon: Mail, permission: "system-emails" },
+  { href: "/admin/options", label: "Options", icon: Layers, permission: "options" },
+  { href: "/admin/membership-tiers", label: "Membership Tiers", icon: Crown, permission: "membership-tiers" },
+  { href: "/admin/operator-tiers", label: "Operator Tiers", icon: Star, permission: "operator-tiers" },
+  { href: "/admin/feature-comparison", label: "Features", icon: GitCompare, permission: "feature-comparison" },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, permission: "analytics" },
+  { href: "/admin/users", label: "Admin Users", icon: Users, permission: "admin-users" },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.permissions) setPermissions(data.permissions);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Empty permissions = super admin (full access)
+  const visibleItems = permissions.length === 0
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((item) => !item.permission || permissions.includes(item.permission));
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -47,7 +70,7 @@ export function AdminSidebar() {
         </Link>
       </div>
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}

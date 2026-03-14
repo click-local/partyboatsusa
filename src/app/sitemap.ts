@@ -1,7 +1,8 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { boats, states, cities, destinationPages } from "@/lib/db/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { boats, states, cities, destinationPages, tripTypes, boatTripTypes } from "@/lib/db/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
+import { getAllSpeciesWithBoatCounts } from "@/lib/db/queries/boats";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
 
@@ -100,5 +101,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not connected yet
   }
 
-  return [...staticPages, ...boatPages, ...statePages, ...cityPages];
+  // Trip type pages
+  let tripTypePages: MetadataRoute.Sitemap = [];
+  try {
+    const allTripTypes = await db
+      .select({ slug: tripTypes.slug })
+      .from(tripTypes)
+      .orderBy(tripTypes.sortOrder);
+
+    tripTypePages = [
+      { url: `${SITE_URL}/trip-types`, changeFrequency: "weekly", priority: 0.7, lastModified: now },
+      ...allTripTypes.map((tt) => ({
+        url: `${SITE_URL}/trip-types/${tt.slug}`,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+        lastModified: now,
+      })),
+    ];
+  } catch {
+    // DB not connected yet
+  }
+
+  // Species pages
+  let speciesPages: MetadataRoute.Sitemap = [];
+  try {
+    const allSpecies = await getAllSpeciesWithBoatCounts();
+
+    speciesPages = [
+      { url: `${SITE_URL}/species`, changeFrequency: "weekly", priority: 0.7, lastModified: now },
+      ...allSpecies.map((sp) => ({
+        url: `${SITE_URL}/species/${sp.slug}`,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+        lastModified: now,
+      })),
+    ];
+  } catch {
+    // DB not connected yet
+  }
+
+  return [...staticPages, ...boatPages, ...statePages, ...cityPages, ...tripTypePages, ...speciesPages];
 }

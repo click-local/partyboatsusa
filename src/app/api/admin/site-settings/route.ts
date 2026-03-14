@@ -3,7 +3,7 @@ import { adminGuard } from "@/lib/auth/admin-guard";
 import { adminGetSiteSettings, adminUpdateSiteSettings } from "@/lib/db/queries/admin";
 
 export async function GET() {
-  const { error } = await adminGuard();
+  const { error } = await adminGuard("site-settings");
   if (error) return error;
   const settings = await adminGetSiteSettings();
   return NextResponse.json(settings ?? {});

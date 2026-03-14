@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Map, Plus, Trash2, Edit, Loader2, Save, X, CheckCircle, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -36,6 +36,9 @@ export default function AdminDestinationPagesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [syncing, setSyncing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "published" | "draft">("");
 
   async function handleSyncCities() {
     setSyncing(true);
@@ -153,6 +156,27 @@ export default function AdminDestinationPagesPage() {
     }
   }
 
+  const filteredPages = useMemo(() => {
+    let result = pages;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((p) => {
+        const name = getReferenceName(p.type, p.referenceId).toLowerCase();
+        return (
+          name.includes(q) ||
+          (p.heroHeadline || "").toLowerCase().includes(q) ||
+          (p.seoTitle || "").toLowerCase().includes(q)
+        );
+      });
+    }
+    if (typeFilter) result = result.filter((p) => p.type === typeFilter);
+    if (statusFilter === "published") result = result.filter((p) => p.isPublished);
+    if (statusFilter === "draft") result = result.filter((p) => !p.isPublished);
+    return result;
+  }, [pages, search, typeFilter, statusFilter, statesList, citiesList]);
+
+  const hasActiveFilters = search || typeFilter || statusFilter;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -167,7 +191,9 @@ export default function AdminDestinationPagesPage() {
         <div className="flex items-center gap-3">
           <Map className="h-6 w-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Destination Pages</h1>
-          <span className="text-sm text-gray-400">{pages.length} pages</span>
+          <span className="text-sm text-gray-400">
+            {hasActiveFilters ? `${filteredPages.length} of ${pages.length}` : pages.length} pages
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleSyncCities} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm disabled:opacity-50">
@@ -234,6 +260,45 @@ export default function AdminDestinationPagesPage() {
         </form>
       )}
 
+      {/* Search & Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          placeholder="Search destinations..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[200px]"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="border rounded-lg px-3 py-1.5 text-sm bg-white"
+        >
+          <option value="">All Types</option>
+          <option value="state">State</option>
+          <option value="city">City</option>
+          <option value="region">Region</option>
+          <option value="custom">Custom</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as "" | "published" | "draft")}
+          className="border rounded-lg px-3 py-1.5 text-sm bg-white"
+        >
+          <option value="">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+        </select>
+        {hasActiveFilters && (
+          <button
+            onClick={() => { setSearch(""); setTypeFilter(""); setStatusFilter(""); }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+          >
+            <X className="h-3.5 w-3.5" /> Clear
+          </button>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
@@ -248,7 +313,7 @@ export default function AdminDestinationPagesPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {pages.map((page) => {
+            {filteredPages.map((page) => {
               const name = getReferenceName(page.type, page.referenceId);
               const score = seoScore(page);
               const slugPath = getSlugPath(page.type, page.referenceId);
@@ -304,9 +369,11 @@ export default function AdminDestinationPagesPage() {
                 </tr>
               );
             })}
-            {pages.length === 0 && (
+            {filteredPages.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">No destination pages yet.</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  {hasActiveFilters ? "No pages match your filters." : "No destination pages yet."}
+                </td>
               </tr>
             )}
           </tbody>

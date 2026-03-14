@@ -3,7 +3,7 @@ import { adminGuard } from "@/lib/auth/admin-guard";
 import { adminGetBoats, adminCreateBoat } from "@/lib/db/queries/admin";
 
 export async function GET() {
-  const { error } = await adminGuard();
+  const { error } = await adminGuard("boats");
   if (error) return error;
   const boats = await adminGetBoats();
   return NextResponse.json(boats);

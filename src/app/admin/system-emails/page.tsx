@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Mail, Plus, Trash2, Edit, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,6 +23,8 @@ export default function AdminSystemEmailsPage() {
   const [editing, setEditing] = useState<EmailTemplate | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
 
   useEffect(() => {
     fetch("/api/admin/email-templates")
@@ -72,6 +74,22 @@ export default function AdminSystemEmailsPage() {
       toast.success("Template deleted");
     }
   }
+
+  const filteredTemplates = useMemo(() => {
+    let result = templates;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          t.subject.toLowerCase().includes(q) ||
+          (t.trigger || "").toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter === "active") result = result.filter((t) => t.isActive !== false);
+    if (statusFilter === "inactive") result = result.filter((t) => t.isActive === false);
+    return result;
+  }, [templates, search, statusFilter]);
 
   if (loading) {
     return (
@@ -146,6 +164,26 @@ export default function AdminSystemEmailsPage() {
         </button>
       </div>
 
+      {/* Search & Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[200px]"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as "" | "active" | "inactive")}
+          className="border rounded-lg px-3 py-1.5 text-sm bg-white"
+        >
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
       {showAdd && (
         <EmailForm data={form as unknown as Record<string, unknown>} onChange={(d) => setForm(d as unknown as typeof emptyForm)} onSubmit={handleAdd} title="New Template" submitLabel="Create" onCancel={() => setShowAdd(false)} />
       )}
@@ -166,7 +204,7 @@ export default function AdminSystemEmailsPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {templates.map((t) => (
+            {filteredTemplates.map((t) => (
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
                 <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{t.subject}</td>
@@ -182,8 +220,8 @@ export default function AdminSystemEmailsPage() {
                 </td>
               </tr>
             ))}
-            {templates.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No email templates yet.</td></tr>
+            {filteredTemplates.length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">{search || statusFilter ? "No templates match your filters." : "No email templates yet."}</td></tr>
             )}
           </tbody>
         </table>

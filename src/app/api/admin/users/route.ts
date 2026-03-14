@@ -15,14 +15,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { admin, error } = await adminGuard();
   if (error) return error;
-  const { email, password, name } = await req.json();
+  const { email, password, name, permissions } = await req.json();
   if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
   const supabase = createAdminClient();
   const { data, error: createError } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { role: "admin", name: name || email },
+    user_metadata: {
+      role: "admin",
+      name: name || email,
+      ...(Array.isArray(permissions) && permissions.length > 0 ? { permissions } : {}),
+    },
   });
   if (createError) return NextResponse.json({ error: createError.message }, { status: 400 });
   return NextResponse.json(data.user, { status: 201 });

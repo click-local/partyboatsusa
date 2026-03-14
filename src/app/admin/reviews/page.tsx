@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, CheckCircle, XCircle, Loader2, Clock, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [search, setSearch] = useState("");
   const [acting, setActing] = useState<number | null>(null);
 
   useEffect(() => {
@@ -80,7 +81,21 @@ export default function AdminReviewsPage() {
     }
   }
 
-  const filtered = filter === "all" ? reviews : reviews.filter((r) => r.review.status === filter);
+  const filtered = useMemo(() => {
+    let result = filter === "all" ? reviews : reviews.filter((r) => r.review.status === filter);
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.boatName.toLowerCase().includes(q) ||
+          r.review.userName.toLowerCase().includes(q) ||
+          r.review.userEmail.toLowerCase().includes(q) ||
+          r.review.title.toLowerCase().includes(q) ||
+          r.review.comment.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [reviews, filter, search]);
   const pendingCount = reviews.filter((r) => r.review.status === "pending").length;
 
   if (loading) {
@@ -107,7 +122,7 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Filter */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(["all", "pending", "approved", "rejected"] as const).map((f) => (
           <button
             key={f}
@@ -121,6 +136,13 @@ export default function AdminReviewsPage() {
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
+        <input
+          type="text"
+          placeholder="Search boat, reviewer, content..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ml-auto border rounded-lg px-3 py-1.5 text-sm w-64"
+        />
       </div>
 
       {/* Table */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Ship, Plus, Trash2, Edit, Loader2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Ship, Plus, Trash2, Edit, Loader2, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatImageUrl } from "@/lib/utils";
@@ -35,6 +35,9 @@ export default function AdminBoatsPage() {
   const [featuredFilter, setFeaturedFilter] = useState<"" | "yes" | "no">("");
   const [claimedFilter, setClaimedFilter] = useState<"" | "yes" | "no">("");
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<string>("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetch("/api/admin/boats")
@@ -66,6 +69,69 @@ export default function AdminBoatsPage() {
       setBoats((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
       toast.success(`${field === "isPublished" ? (updated.isPublished ? "Published" : "Unpublished") : (updated.isFeaturedAdmin ? "Featured" : "Unfeatured")}`);
     }
+  }
+
+  function toggleSelect(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === paginated.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(paginated.map((b) => b.id)));
+    }
+  }
+
+  async function bulkAction(field: string, value: boolean) {
+    const ids = [...selected];
+    if (!ids.length) return;
+    const label = field === "isPublished" ? (value ? "publish" : "unpublish") : (value ? "feature" : "unfeature");
+    if (!confirm(`${label.charAt(0).toUpperCase() + label.slice(1)} ${ids.length} boats?`)) return;
+
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        fetch(`/api/admin/boats/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [field]: value }),
+        }).then((r) => r.json())
+      )
+    );
+
+    let successCount = 0;
+    setBoats((prev) =>
+      prev.map((b) => {
+        const result = results[ids.indexOf(b.id)];
+        if (result?.status === "fulfilled") {
+          successCount++;
+          return { ...b, ...result.value };
+        }
+        return b;
+      })
+    );
+    setSelected(new Set());
+    toast.success(`${successCount} boats updated`);
+  }
+
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} boats? This cannot be undone.`)) return;
+
+    const results = await Promise.allSettled(
+      ids.map((id) => fetch(`/api/admin/boats/${id}`, { method: "DELETE" }))
+    );
+
+    const deleted = ids.filter((_, i) => results[i]?.status === "fulfilled");
+    setBoats((prev) => prev.filter((b) => !deleted.includes(b.id)));
+    setSelected(new Set());
+    toast.success(`${deleted.length} boats deleted`);
   }
 
   // Derive unique states from loaded boats
@@ -107,8 +173,26 @@ export default function AdminBoatsPage() {
     if (claimedFilter === "yes") result = result.filter((b) => b.operatorId != null);
     if (claimedFilter === "no") result = result.filter((b) => b.operatorId == null);
 
+    // Sort
+    if (sortKey) {
+      result = [...result].sort((a, b) => {
+        let aVal: string | number, bVal: string | number;
+        switch (sortKey) {
+          case "name": aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+          case "location": aVal = `${a.stateCode} ${a.cityName}`.toLowerCase(); bVal = `${b.stateCode} ${b.cityName}`.toLowerCase(); break;
+          case "capacity": aVal = a.capacity; bVal = b.capacity; break;
+          case "price": aVal = Number(a.minPricePerPerson); bVal = Number(b.minPricePerPerson); break;
+          case "rating": aVal = Number(a.rating); bVal = Number(b.rating); break;
+          default: return 0;
+        }
+        if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
     return result;
-  }, [boats, search, stateFilter, publishedFilter, featuredFilter, claimedFilter]);
+  }, [boats, search, stateFilter, publishedFilter, featuredFilter, claimedFilter, sortKey, sortDir]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -120,6 +204,35 @@ export default function AdminBoatsPage() {
   }, [search, stateFilter, publishedFilter, featuredFilter, claimedFilter]);
 
   const hasActiveFilters = search || stateFilter || publishedFilter || featuredFilter || claimedFilter;
+
+  function toggleSort(key: string) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  }
+
+  function SortHeader({ label, sortField, align = "left" }: { label: string; sortField: string; align?: "left" | "center" }) {
+    const active = sortKey === sortField;
+    return (
+      <th
+        className={`${align === "center" ? "text-center" : "text-left"} px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-gray-900 select-none`}
+        onClick={() => toggleSort(sortField)}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {active ? (
+            sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+          ) : (
+            <ArrowUpDown className="h-3 w-3 opacity-30" />
+          )}
+        </span>
+      </th>
+    );
+  }
 
   function clearFilters() {
     setSearch("");
@@ -218,17 +331,51 @@ export default function AdminBoatsPage() {
         )}
       </div>
 
+      {/* Bulk Actions */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+          <span className="text-sm font-medium text-blue-700">{selected.size} selected</span>
+          <div className="h-4 w-px bg-blue-200" />
+          <button onClick={() => bulkAction("isPublished", true)} className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded hover:bg-green-200">
+            Publish
+          </button>
+          <button onClick={() => bulkAction("isPublished", false)} className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+            Unpublish
+          </button>
+          <button onClick={() => bulkAction("isFeaturedAdmin", true)} className="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">
+            Feature
+          </button>
+          <button onClick={() => bulkAction("isFeaturedAdmin", false)} className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+            Unfeature
+          </button>
+          <button onClick={bulkDelete} className="px-3 py-1 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200">
+            Delete
+          </button>
+          <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-blue-600 hover:underline">
+            Clear selection
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Boat</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Location</th>
+              <th className="px-4 py-3 w-8">
+                <input
+                  type="checkbox"
+                  checked={paginated.length > 0 && selected.size === paginated.length}
+                  onChange={toggleSelectAll}
+                  className="rounded"
+                />
+              </th>
+              <SortHeader label="Boat" sortField="name" />
+              <SortHeader label="Location" sortField="location" />
               <th className="text-left px-4 py-3 font-medium text-gray-600">Operator</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">Capacity</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">Price</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">Rating</th>
+              <SortHeader label="Capacity" sortField="capacity" align="center" />
+              <SortHeader label="Price" sortField="price" align="center" />
+              <SortHeader label="Rating" sortField="rating" align="center" />
               <th className="text-center px-4 py-3 font-medium text-gray-600">Published</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">Featured</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
@@ -236,7 +383,15 @@ export default function AdminBoatsPage() {
           </thead>
           <tbody className="divide-y">
             {paginated.map((boat) => (
-              <tr key={boat.id} className="hover:bg-gray-50">
+              <tr key={boat.id} className={`hover:bg-gray-50 ${selected.has(boat.id) ? "bg-blue-50/50" : ""}`}>
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(boat.id)}
+                    onChange={() => toggleSelect(boat.id)}
+                    className="rounded"
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {boat.primaryImageUrl && (
@@ -280,7 +435,7 @@ export default function AdminBoatsPage() {
             ))}
             {paginated.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={10} className="px-4 py-8 text-center text-gray-400">
                   {hasActiveFilters ? "No boats match your filters." : "No boats yet."}
                 </td>
               </tr>

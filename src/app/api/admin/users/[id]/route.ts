@@ -12,7 +12,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const update: Record<string, unknown> = {};
   if (body.email) update.email = body.email;
   if (body.password) update.password = body.password;
-  if (body.name !== undefined) update.user_metadata = { name: body.name, role: "admin" };
+
+  // Build metadata update if name or permissions changed
+  if (body.name !== undefined || body.permissions !== undefined) {
+    const metadata: Record<string, unknown> = { role: "admin" };
+    if (body.name !== undefined) metadata.name = body.name;
+    if (body.permissions !== undefined) metadata.permissions = body.permissions;
+    update.user_metadata = metadata;
+  }
 
   const { data, error: updateError } = await supabase.auth.admin.updateUserById(id, update);
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
