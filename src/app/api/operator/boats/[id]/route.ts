@@ -3,6 +3,7 @@ import { getOperator } from "@/lib/auth/get-operator";
 import { db } from "@/lib/db";
 import { boats, boatTripTypes, boatAmenities, boatSpecies } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { operatorBoatUpdateSchema } from "@/lib/validations";
 
 export async function GET(
   _request: NextRequest,
@@ -72,6 +73,13 @@ export async function PUT(
 
   const body = await request.json();
 
+  const parsed = operatorBoatUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+  }
+
+  const { tripTypeIds, amenityIds, speciesIds, ...validatedFields } = parsed.data;
+
   // Only allow updating specific fields
   const allowedFields: Record<string, unknown> = {};
   const editableKeys = [
@@ -88,14 +96,11 @@ export async function PUT(
   const isPro = operator.tier?.isHighestTier || false;
 
   for (const key of editableKeys) {
-    if (key in body) {
+    if (key in validatedFields) {
       if (key === "galleryImageUrls" && !isPro) continue;
-      allowedFields[key] = body[key];
+      allowedFields[key] = validatedFields[key as keyof typeof validatedFields];
     }
   }
-
-  // Handle join table fields separately
-  const { tripTypeIds, amenityIds, speciesIds } = body;
 
   if (Object.keys(allowedFields).length === 0 && tripTypeIds === undefined && amenityIds === undefined && speciesIds === undefined) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

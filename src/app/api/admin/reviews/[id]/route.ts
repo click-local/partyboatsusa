@@ -19,8 +19,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await req.json();
 
+  const { adminReviewActionSchema } = await import("@/lib/validations");
+  const parsed = adminReviewActionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+  }
+
   // Check if this is an approval action
-  const isApproving = body.status === "approved";
+  const isApproving = parsed.data.status === "approved";
 
   // Get review details before updating (for the email)
   let reviewData: { boatId: number; userName: string; rating: number; title: string; comment: string } | null = null;
@@ -29,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (r) reviewData = { boatId: r.boatId, userName: r.userName, rating: r.rating, title: r.title, comment: r.comment };
   }
 
-  const review = await adminUpdateReview(Number(id), body);
+  const review = await adminUpdateReview(Number(id), parsed.data);
 
   // Send notification to operator/boat email on approval
   if (isApproving && reviewData) {

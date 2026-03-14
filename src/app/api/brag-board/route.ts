@@ -7,39 +7,29 @@ import {
   getBoatNotificationRecipient,
 } from "@/lib/email/send-notification";
 import { buildBragBoardNotificationEmail } from "@/lib/email/templates";
+import { bragBoardSubmissionSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      boatId,
-      submitterName,
-      submitterEmail,
-      catchDescription,
-      photoUrl,
-      honeypot,
-      formLoadedAt,
-    } = body;
 
-    // Anti-spam: honeypot (silently accept to confuse bots)
-    if (honeypot) {
+    // Anti-spam checks run before validation
+    if (body.honeypot) {
       return NextResponse.json({ success: true }, { status: 201 });
     }
-
-    // Anti-spam: time-based (form must be open at least 3 seconds)
-    if (formLoadedAt) {
-      const elapsed = Date.now() - Number(formLoadedAt);
+    if (body.formLoadedAt) {
+      const elapsed = Date.now() - Number(body.formLoadedAt);
       if (elapsed < 3000) {
         return NextResponse.json({ success: true }, { status: 201 });
       }
     }
 
-    if (!boatId || !submitterName || !catchDescription || !photoUrl) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    const parsed = bragBoardSubmissionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
     }
+
+    const { boatId, submitterName, submitterEmail, catchDescription, photoUrl } = parsed.data;
 
     // Verify boat exists
     const [boat] = await db

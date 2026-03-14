@@ -26,18 +26,13 @@ export async function PUT(request: NextRequest) {
   if (error) return error;
 
   const body = await request.json();
-  const { photoId, action, boatId, boatName, boatSlug, submitterName } = body as {
-    photoId: number;
-    action: "approve" | "reject";
-    boatId: number;
-    boatName: string;
-    boatSlug: string;
-    submitterName: string;
-  };
 
-  if (!photoId || !["approve", "reject"].includes(action)) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  const { adminBragBoardActionSchema } = await import("@/lib/validations");
+  const parsed = adminBragBoardActionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid request" }, { status: 400 });
   }
+  const { photoId, action, boatId, boatName, boatSlug, submitterName } = parsed.data;
 
   const result = await adminUpdateBragBoardPhoto(photoId, action === "approve" ? "approved" : "rejected");
   if (!result) {
@@ -53,9 +48,9 @@ export async function PUT(request: NextRequest) {
 
     if (to.length > 0) {
       const html = buildPhotoApprovedEmail({
-        boatName,
-        boatSlug,
-        submitterName,
+        boatName: boatName || "",
+        boatSlug: boatSlug || "",
+        submitterName: submitterName || "",
       });
 
       resend.emails

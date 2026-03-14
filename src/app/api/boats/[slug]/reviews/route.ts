@@ -7,6 +7,7 @@ import {
   getBoatNotificationRecipient,
 } from "@/lib/email/send-notification";
 import { buildReviewNotificationEmail } from "@/lib/email/templates";
+import { reviewSubmissionSchema } from "@/lib/validations";
 
 export async function POST(
   request: NextRequest,
@@ -16,15 +17,12 @@ export async function POST(
     await params; // resolve params
     const body = await request.json();
 
-    const { boatId, userName, userEmail, rating, title, comment, tripDate } = body;
-
-    if (!boatId || !userName || !userEmail || !rating || !title || !comment) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const parsed = reviewSubmissionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
     }
 
-    if (rating < 1 || rating > 5) {
-      return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
-    }
+    const { boatId, userName, userEmail, rating, title, comment, tripDate } = parsed.data;
 
     const [review] = await db.insert(reviews).values({
       boatId,

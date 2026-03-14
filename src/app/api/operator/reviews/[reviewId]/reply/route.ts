@@ -31,13 +31,13 @@ export async function POST(
   }
 
   const body = await request.json();
-  const reply = (body.reply || "").trim();
-  if (!reply) {
-    return NextResponse.json({ error: "Reply cannot be empty" }, { status: 400 });
+
+  const { operatorReviewReplySchema } = await import("@/lib/validations");
+  const parsed = operatorReviewReplySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
   }
-  if (reply.length > 2000) {
-    return NextResponse.json({ error: "Reply must be under 2000 characters" }, { status: 400 });
-  }
+  const reply = parsed.data.reply.trim();
 
   // Get the review and verify operator owns the boat
   const [review] = await db.select().from(reviews).where(eq(reviews.id, id));

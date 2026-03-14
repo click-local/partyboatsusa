@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { buildContactFormEmail } from "@/lib/email/templates";
+import { contactFormSchema } from "@/lib/validations";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const ADMIN_EMAIL = "support@partyboatsusa.com";
@@ -11,11 +12,13 @@ const EMAIL_FROM =
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, subject, message } = body;
 
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const parsed = contactFormSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
     }
+
+    const { name, email, subject, message } = parsed.data;
 
     const html = buildContactFormEmail({ name, email, subject, message });
 

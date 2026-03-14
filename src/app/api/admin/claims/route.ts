@@ -29,11 +29,13 @@ export async function PUT(request: NextRequest) {
   if (error) return error;
 
   const body = await request.json();
-  const { claimId, action } = body as { claimId: number; action: "approve" | "reject" };
 
-  if (!claimId || !["approve", "reject"].includes(action)) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  const { adminClaimActionSchema } = await import("@/lib/validations");
+  const parsed = adminClaimActionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid request" }, { status: 400 });
   }
+  const { claimId, action } = parsed.data;
 
   // Get claim details before acting (for the email)
   const [claim] = await db
