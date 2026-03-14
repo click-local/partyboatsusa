@@ -56,7 +56,8 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith("/operator/login") &&
         !request.nextUrl.pathname.startsWith("/operator/forgot-password") &&
         !request.nextUrl.pathname.startsWith("/operator/reset-password") &&
-        !request.nextUrl.pathname.startsWith("/operator/verify-email")) {
+        !request.nextUrl.pathname.startsWith("/operator/verify-email") &&
+        !request.nextUrl.pathname.startsWith("/operator/claim")) {
       if (!user) {
         const url = request.nextUrl.clone();
         url.pathname = "/operator/login";
@@ -81,7 +82,8 @@ export async function updateSession(request: NextRequest) {
         !path.startsWith("/operator/login") &&
         !path.startsWith("/operator/forgot-password") &&
         !path.startsWith("/operator/reset-password") &&
-        !path.startsWith("/operator/verify-email")) {
+        !path.startsWith("/operator/verify-email") &&
+        !path.startsWith("/operator/claim")) {
       const url = request.nextUrl.clone();
       url.pathname = "/operator/login";
       return NextResponse.redirect(url);

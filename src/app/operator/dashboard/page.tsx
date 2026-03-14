@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   Ship,
@@ -84,6 +85,10 @@ export default function OperatorDashboard() {
 }
 
 function DashboardContent() {
+  const searchParams = useSearchParams();
+  const claimBoatId = searchParams.get("claimBoatId");
+  const claimSubmitted = useRef(false);
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -98,6 +103,32 @@ function DashboardContent() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Auto-submit claim request when arriving from claim flow
+  useEffect(() => {
+    if (!claimBoatId || claimSubmitted.current) return;
+    claimSubmitted.current = true;
+
+    fetch("/api/operator/claims", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ boatId: parseInt(claimBoatId, 10) }),
+    })
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success(
+            "Claim request submitted! Our team will review it within 24 hours."
+          );
+        }
+      })
+      .catch(() => toast.error("Failed to submit claim request"));
+
+    // Clean up the URL
+    window.history.replaceState({}, "", "/operator/dashboard");
+  }, [claimBoatId]);
 
   async function handlePhotoAction(
     photoId: number,

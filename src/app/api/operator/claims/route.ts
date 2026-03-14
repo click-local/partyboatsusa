@@ -5,6 +5,17 @@ import { claimRequests, boats } from "@/lib/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { getOperatorClaimRequests, logOperatorContact } from "@/lib/db/queries/operators";
 import { claimRequestSchema } from "@/lib/validations/operator";
+import { Resend } from "resend";
+import { buildClaimRequestNotificationEmail } from "@/lib/email/templates";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const EMAIL_FROM =
+  process.env.EMAIL_FROM ||
+  "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>";
+const ADMIN_EMAILS = [
+  "support@partyboatsusa.com",
+  "support@gofishvip.com",
+];
 
 export async function GET() {
   const operator = await getOperator();
@@ -34,7 +45,12 @@ export async function POST(request: NextRequest) {
 
   // Verify boat exists and is unclaimed
   const boat = await db
-    .select({ id: boats.id, name: boats.name })
+    .select({
+      id: boats.id,
+      name: boats.name,
+      cityName: boats.cityName,
+      stateCode: boats.stateCode,
+    })
     .from(boats)
     .where(and(eq(boats.id, parsed.data.boatId), isNull(boats.operatorId)))
     .limit(1);
@@ -60,6 +76,25 @@ export async function POST(request: NextRequest) {
     eventType: "claim_request",
     context: { boatId: parsed.data.boatId, boatName: boat[0].name },
   }).catch(() => {});
+
+  // Send notification email (fire-and-forget)
+  const html = buildClaimRequestNotificationEmail({
+    boatName: boat[0].name,
+    boatCity: boat[0].cityName,
+    boatState: boat[0].stateCode,
+    operatorName: operator.companyName,
+    operatorEmail: operator.email,
+    message: parsed.data.message,
+  });
+
+  resend.emails
+    .send({
+      from: EMAIL_FROM,
+      to: ADMIN_EMAILS,
+      subject: `New Claim Request: ${boat[0].name} - ${boat[0].cityName}, ${boat[0].stateCode}`,
+      html,
+    })
+    .catch(() => {});
 
   return NextResponse.json(claim, { status: 201 });
 }

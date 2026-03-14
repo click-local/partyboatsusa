@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
+
+interface TripType { id: number; name: string; }
+interface Amenity { id: number; name: string; icon: string; }
 
 export interface BoatFormData {
   name: string;
@@ -108,6 +111,18 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
   const [speciesInput, setSpeciesInput] = useState("");
   const [includedInput, setIncludedInput] = useState("");
   const [extrasInput, setExtrasInput] = useState("");
+  const [tripTypes, setTripTypes] = useState<TripType[]>([]);
+  const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/operator/trip-types").then((r) => r.json()),
+      fetch("/api/operator/amenities").then((r) => r.json()),
+    ]).then(([tt, am]) => {
+      setTripTypes(tt);
+      setAmenitiesList(am);
+    });
+  }, []);
 
   function update<K extends keyof BoatFormData>(key: K, value: BoatFormData[K]) {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -157,6 +172,13 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
 
   function removeExtra(s: string) {
     update("availableExtras", data.availableExtras.filter((x) => x !== s));
+  }
+
+  function toggleCheckbox(field: "tripTypeIds" | "amenityIds", id: number) {
+    setData((prev) => {
+      const arr = prev[field] as number[];
+      return { ...prev, [field]: arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id] };
+    });
   }
 
   function addGalleryImage(url: string) {
@@ -346,6 +368,33 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Trip Types & Amenities */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Trip Types & Amenities</h2>
+        <div>
+          <label className="block text-sm font-medium mb-2">Trip Types</label>
+          <div className="flex flex-wrap gap-2">
+            {tripTypes.map((tt) => (
+              <label key={tt.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.tripTypeIds.includes(tt.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
+                <input type="checkbox" checked={data.tripTypeIds.includes(tt.id)} onChange={() => toggleCheckbox("tripTypeIds", tt.id)} className="sr-only" />
+                {tt.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Amenities</label>
+          <div className="flex flex-wrap gap-2">
+            {amenitiesList.map((am) => (
+              <label key={am.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.amenityIds.includes(am.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
+                <input type="checkbox" checked={data.amenityIds.includes(am.id)} onChange={() => toggleCheckbox("amenityIds", am.id)} className="sr-only" />
+                {am.name}
+              </label>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -235,7 +235,7 @@ export default async function BoatDetailPage({ params }: Props) {
               </div>
             </div>
             <Link
-              href={`/operator/login?claimBoatId=${boat.id}`}
+              href={`/operator/claim?boatId=${boat.id}&boatName=${encodeURIComponent(boat.name)}`}
               className="inline-flex items-center justify-center rounded-md bg-primary text-white px-4 py-2 text-sm font-medium hover:bg-primary/90 w-full sm:w-auto"
             >
               Claim Your Free Listing
@@ -484,7 +484,7 @@ export default async function BoatDetailPage({ params }: Props) {
                         <h3 className="font-semibold text-yellow-900 mb-2">Unclaimed Listing</h3>
                         <p className="text-sm text-yellow-800">
                           This listing hasn&apos;t been claimed by the operator yet. Are you the owner?{" "}
-                          <Link href={`/operator/login?claimBoatId=${boat.id}`} className="text-primary underline font-medium">
+                          <Link href={`/operator/claim?boatId=${boat.id}&boatName=${encodeURIComponent(boat.name)}`} className="text-primary underline font-medium">
                             Claim this listing
                           </Link>
                         </p>
@@ -690,7 +690,7 @@ export default async function BoatDetailPage({ params }: Props) {
                   </Button>
                 </a>
               )}
-              <Link href={`/operator/login?claimBoatId=${boat.id}`}>
+              <Link href={`/operator/claim?boatId=${boat.id}&boatName=${encodeURIComponent(boat.name)}`}>
                 <Button size="sm" className="h-10 px-4 font-bold">
                   <Ship className="h-4 w-4 mr-1.5" />
                   Claim Listing

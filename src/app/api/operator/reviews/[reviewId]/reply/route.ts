@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOperator } from "@/lib/auth/get-operator";
 import { db } from "@/lib/db";
 import { reviews, boats } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { Resend } from "resend";
+import { buildOperatorReplyEmail } from "@/lib/email/templates";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const EMAIL_FROM =
+  process.env.EMAIL_FROM ||
+  "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>";
 
 export async function POST(
   request: NextRequest,
@@ -39,7 +46,7 @@ export async function POST(
   }
 
   const [boat] = await db
-    .select({ operatorId: boats.operatorId })
+    .select({ operatorId: boats.operatorId, name: boats.name, slug: boats.slug })
     .from(boats)
     .where(eq(boats.id, review.boatId));
 
@@ -55,6 +62,26 @@ export async function POST(
       operatorReplyAt: new Date(),
     })
     .where(eq(reviews.id, id));
+
+  // Send email to reviewer (fire-and-forget)
+  if (review.userEmail) {
+    const html = buildOperatorReplyEmail({
+      boatName: boat.name,
+      boatSlug: boat.slug,
+      reviewerName: review.userName,
+      reviewTitle: review.title,
+      replySnippet: reply,
+    });
+
+    resend.emails
+      .send({
+        from: EMAIL_FROM,
+        to: [review.userEmail],
+        subject: `The captain of ${boat.name} replied to your review`,
+        html,
+      })
+      .catch(() => {});
+  }
 
   return NextResponse.json({ success: true });
 }

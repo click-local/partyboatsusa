@@ -336,7 +336,7 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
             {amenitiesList.map((am) => (
               <label key={am.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.amenityIds.includes(am.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
                 <input type="checkbox" checked={data.amenityIds.includes(am.id)} onChange={() => toggleCheckbox("amenityIds", am.id)} className="sr-only" />
-                {am.icon} {am.name}
+                {am.name}
               </label>
             ))}
           </div>
@@ -419,10 +419,6 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">SEO Description</label>
           <textarea value={data.seoDescription} onChange={(e) => set("seoDescription", e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm" rows={2} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">SEO Keywords</label>
-          <input value={data.seoKeywords} onChange={(e) => set("seoKeywords", e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="comma-separated keywords" />
         </div>
       </section>
 

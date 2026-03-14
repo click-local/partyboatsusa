@@ -6,7 +6,7 @@ import {
   siteSettings, emailTemplates, featureComparisonItems, featureTierValues,
   operatorContactLogs, pageSeoSettings,
 } from "@/lib/db/schema";
-import { eq, desc, asc, sql, and } from "drizzle-orm";
+import { eq, desc, asc, sql, and, isNull } from "drizzle-orm";
 
 // ===== BOATS =====
 export async function adminGetBoats() {
@@ -397,4 +397,96 @@ export async function adminSyncCitiesFromBoats() {
     totalCities: existingCities.length + citiesAdded,
     totalPages: existingPages.length + pagesAdded,
   };
+}
+
+// ===== CLAIM REQUESTS =====
+
+export async function adminGetClaimRequests() {
+  return db
+    .select({
+      id: claimRequests.id,
+      status: claimRequests.status,
+      message: claimRequests.message,
+      createdAt: claimRequests.createdAt,
+      boatId: claimRequests.boatId,
+      boatName: boats.name,
+      boatCity: boats.cityName,
+      boatState: boats.stateCode,
+      operatorId: claimRequests.operatorId,
+      operatorCompany: operators.companyName,
+      operatorEmail: operators.email,
+    })
+    .from(claimRequests)
+    .innerJoin(boats, eq(claimRequests.boatId, boats.id))
+    .innerJoin(operators, eq(claimRequests.operatorId, operators.id))
+    .orderBy(desc(claimRequests.createdAt));
+}
+
+export async function adminApproveClaim(claimId: number) {
+  const [claim] = await db
+    .select()
+    .from(claimRequests)
+    .where(eq(claimRequests.id, claimId))
+    .limit(1);
+
+  if (!claim) return null;
+
+  // Assign the boat to the operator
+  await db
+    .update(boats)
+    .set({ operatorId: claim.operatorId })
+    .where(and(eq(boats.id, claim.boatId), isNull(boats.operatorId)));
+
+  // Update claim status
+  const [updated] = await db
+    .update(claimRequests)
+    .set({ status: "approved", updatedAt: new Date() })
+    .where(eq(claimRequests.id, claimId))
+    .returning();
+
+  return updated;
+}
+
+export async function adminRejectClaim(claimId: number) {
+  const [updated] = await db
+    .update(claimRequests)
+    .set({ status: "rejected", updatedAt: new Date() })
+    .where(eq(claimRequests.id, claimId))
+    .returning();
+
+  return updated;
+}
+
+// ===== BRAG BOARD PHOTOS (Admin) =====
+
+export async function adminGetBragBoardPhotos() {
+  return db
+    .select({
+      id: bragBoardPhotos.id,
+      boatId: bragBoardPhotos.boatId,
+      boatName: boats.name,
+      boatSlug: boats.slug,
+      submitterName: bragBoardPhotos.submitterName,
+      submitterEmail: bragBoardPhotos.submitterEmail,
+      photoUrl: bragBoardPhotos.photoUrl,
+      catchDescription: bragBoardPhotos.catchDescription,
+      status: bragBoardPhotos.status,
+      submittedAt: bragBoardPhotos.submittedAt,
+    })
+    .from(bragBoardPhotos)
+    .innerJoin(boats, eq(bragBoardPhotos.boatId, boats.id))
+    .orderBy(desc(bragBoardPhotos.submittedAt));
+}
+
+export async function adminUpdateBragBoardPhoto(
+  photoId: number,
+  status: "approved" | "rejected"
+) {
+  const [updated] = await db
+    .update(bragBoardPhotos)
+    .set({ status })
+    .where(eq(bragBoardPhotos.id, photoId))
+    .returning();
+
+  return updated;
 }

@@ -3,24 +3,24 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { Anchor, Loader2, Eye, EyeOff } from "lucide-react";
+import { Anchor, Loader2, Eye, EyeOff, ShieldCheck, Settings } from "lucide-react";
 import { toast } from "sonner";
 
-export default function OperatorLoginPage() {
+export default function ClaimListingPage() {
   return (
     <Suspense>
-      <LoginContent />
+      <ClaimContent />
     </Suspense>
   );
 }
 
-function LoginContent() {
+function ClaimContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const claimBoatId = searchParams.get("claimBoatId");
+  const boatId = searchParams.get("boatId");
+  const boatName = searchParams.get("boatName");
 
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [tab, setTab] = useState<"login" | "register">("register");
   const [loading, setLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
@@ -62,8 +62,8 @@ function LoginContent() {
       }
 
       toast.success("Welcome back!");
-      const redirect = claimBoatId
-        ? `/operator/dashboard?claimBoatId=${claimBoatId}`
+      const redirect = boatId
+        ? `/operator/dashboard?claimBoatId=${boatId}`
         : "/operator/dashboard";
       window.location.href = redirect;
     } catch {
@@ -96,9 +96,8 @@ function LoginContent() {
         return;
       }
 
-      // Redirect to verification page instead of dashboard
       const params = new URLSearchParams({ email: regEmail });
-      if (claimBoatId) params.set("claimBoatId", claimBoatId);
+      if (boatId) params.set("claimBoatId", boatId);
       router.push(`/operator/verify-email?${params.toString()}`);
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -122,7 +121,63 @@ function LoginContent() {
               </div>
             )}
           </Link>
-          <p className="text-muted-foreground mt-3">Captain&apos;s Portal</p>
+        </div>
+
+        {/* Claim Instructions */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+          <h1 className="text-lg font-display font-bold text-blue-900 mb-1">
+            Claim Your Listing
+          </h1>
+          {boatName && (
+            <p className="text-sm font-medium text-blue-800 mb-3">
+              {boatName}
+            </p>
+          )}
+          <p className="text-sm text-blue-700 mb-4">
+            Take control of your listing to update your information, respond to
+            reviews, and attract more customers. Here&apos;s how it works:
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Anchor className="h-3.5 w-3.5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  1. Create a free account or sign in
+                </p>
+                <p className="text-xs text-blue-600">
+                  Quick setup — no credit card required
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  2. We verify your ownership
+                </p>
+                <p className="text-xs text-blue-600">
+                  Our team reviews claims within 24 hours
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Settings className="h-3.5 w-3.5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  3. Manage your listing
+                </p>
+                <p className="text-xs text-blue-600">
+                  Update photos, respond to reviews, and more
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Card */}
@@ -196,7 +251,7 @@ function LoginContent() {
                 className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Sign In
+                Sign In & Claim Listing
               </button>
               <div className="text-center">
                 <Link
@@ -295,7 +350,7 @@ function LoginContent() {
                 className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Create Account
+                Create Account & Claim Listing
               </button>
             </form>
           )}
