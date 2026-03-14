@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminGuard } from "@/lib/auth/admin-guard";
-import { adminGetSpecies, adminCreateSpecies, adminSetSpeciesAliases } from "@/lib/db/queries/admin";
-import { adminSpeciesSchema } from "@/lib/validations";
+import { adminGetSpeciesCategories, adminCreateSpeciesCategory } from "@/lib/db/queries/admin";
+import { adminSpeciesCategorySchema } from "@/lib/validations";
 
 export async function GET() {
   const { error } = await adminGuard();
   if (error) return error;
-  const list = await adminGetSpecies();
+  const list = await adminGetSpeciesCategories();
   return NextResponse.json(list);
 }
 
@@ -14,14 +14,10 @@ export async function POST(req: NextRequest) {
   const { error } = await adminGuard();
   if (error) return error;
   const body = await req.json();
-  const parsed = adminSpeciesSchema.safeParse(body);
+  const parsed = adminSpeciesCategorySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
   }
-  const { aliases, ...data } = parsed.data;
-  const item = await adminCreateSpecies(data);
-  if (aliases && aliases.length > 0) {
-    await adminSetSpeciesAliases(item.id, aliases);
-  }
+  const item = await adminCreateSpeciesCategory(parsed.data);
   return NextResponse.json(item, { status: 201 });
 }

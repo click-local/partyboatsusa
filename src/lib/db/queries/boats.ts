@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, speciesCategories, speciesAliases, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -367,15 +367,70 @@ export async function getAllSpeciesWithBoatCounts() {
         name: species.name,
         slug: species.slug,
         sortOrder: species.sortOrder,
-        boatCount: sql<number>`count(${boatSpecies.boatId})`.as("boat_count"),
+        scientificName: species.scientificName,
+        description: species.description,
+        imageUrl: species.imageUrl,
+        categoryId: species.categoryId,
+        categoryName: speciesCategories.name,
+        categorySlug: speciesCategories.slug,
+        boatCount: sql<number>`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END)`.as("boat_count"),
       })
       .from(species)
+      .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
       .leftJoin(boatSpecies, eq(boatSpecies.speciesId, species.id))
-      .leftJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
-      .groupBy(species.id, species.name, species.slug, species.sortOrder)
-      .orderBy(species.sortOrder);
+      .leftJoin(boats, eq(boatSpecies.boatId, boats.id))
+      .groupBy(species.id, species.name, species.slug, species.sortOrder, species.scientificName, species.description, species.imageUrl, species.categoryId, speciesCategories.name, speciesCategories.slug)
+      .orderBy(speciesCategories.sortOrder, species.name);
   } catch {
-    // Table may not exist yet before migration
+    return [];
+  }
+}
+
+export async function getAllSpeciesCategories() {
+  try {
+    return await db
+      .select()
+      .from(speciesCategories)
+      .orderBy(speciesCategories.sortOrder);
+  } catch {
+    return [];
+  }
+}
+
+export async function getSpeciesWithAliases(speciesId: number) {
+  const aliases = await db
+    .select({ id: speciesAliases.id, name: speciesAliases.name })
+    .from(speciesAliases)
+    .where(eq(speciesAliases.speciesId, speciesId));
+  return aliases;
+}
+
+export async function searchSpeciesByName(query: string) {
+  const q = `%${query.toLowerCase()}%`;
+  try {
+    return await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        scientificName: species.scientificName,
+        categoryName: speciesCategories.name,
+      })
+      .from(species)
+      .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
+      .where(
+        sql`(
+          LOWER(${species.name}) LIKE ${q}
+          OR LOWER(${species.scientificName}) LIKE ${q}
+          OR ${species.id} IN (
+            SELECT ${speciesAliases.speciesId} FROM ${speciesAliases}
+            WHERE ${speciesAliases.nameLower} LIKE ${q}
+          )
+        )`
+      )
+      .orderBy(species.name)
+      .limit(50);
+  } catch {
     return [];
   }
 }
@@ -384,8 +439,29 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
   const offset = (page - 1) * limit;
 
   try {
-    const [sp] = await db.select().from(species).where(eq(species.slug, speciesSlug)).limit(1);
+    const [sp] = await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        scientificName: species.scientificName,
+        description: species.description,
+        imageUrl: species.imageUrl,
+        categoryId: species.categoryId,
+        categoryName: speciesCategories.name,
+        categorySlug: speciesCategories.slug,
+      })
+      .from(species)
+      .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
+      .where(eq(species.slug, speciesSlug))
+      .limit(1);
     if (!sp) return null;
+
+    // Get aliases
+    const aliases = await db
+      .select({ name: speciesAliases.name })
+      .from(speciesAliases)
+      .where(eq(speciesAliases.speciesId, sp.id));
 
     const where = and(
       eq(boats.isPublished, true),
@@ -398,15 +474,14 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
     ]);
 
     return {
-      speciesName: sp.name,
-      speciesSlug: sp.slug,
+      species: sp,
+      aliases: aliases.map((a) => a.name),
       boats: results,
       total: Number(countResult[0]?.count ?? 0),
       page,
       totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
     };
   } catch {
-    // Table may not exist yet before migration
     return null;
   }
 }

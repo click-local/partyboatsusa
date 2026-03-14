@@ -317,6 +317,33 @@ ${ctaButton("View Full Reply", `${SITE_URL}/boats/${data.boatSlug}`)}`;
   return emailWrapper(content);
 }
 
+// ---- Species Suggestion Notification (to Admin) ----
+
+interface SpeciesSuggestionNotificationData {
+  speciesName: string;
+  commonNames?: string | null;
+  notes?: string | null;
+  operatorName: string;
+  operatorEmail: string;
+}
+
+export function buildSpeciesSuggestionEmail(data: SpeciesSuggestionNotificationData): string {
+  const content = `
+<h2 style="margin:0 0 8px;font-size:18px;color:#111827;">New Species Suggestion</h2>
+<p style="margin:0 0 20px;font-size:13px;color:#6b7280;">An operator has suggested adding a new fish species to the database.</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0;">
+<tr><td style="padding:20px;">
+  <p style="margin:0 0 8px;font-size:15px;font-weight:bold;color:#111827;">${escapeHtml(data.speciesName)}</p>${data.commonNames ? `\n  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Also known as: ${escapeHtml(data.commonNames)}</p>` : ""}${data.notes ? `\n  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Notes: ${escapeHtml(data.notes)}</p>` : ""}
+  <p style="margin:8px 0 0;font-size:13px;color:#6b7280;">Suggested by: <strong style="color:#111827;">${escapeHtml(data.operatorName)}</strong> (${escapeHtml(data.operatorEmail)})</p>
+</td></tr>
+</table>
+
+<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">Review this suggestion in the admin panel under Species Management.</p>`;
+
+  return emailWrapper(content);
+}
+
 // ---- Contact Form Submission (to Admin) ----
 
 interface ContactFormNotificationData {

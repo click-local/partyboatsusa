@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import {
   boats, operators, membershipTiers, boatAmenities, boatTripTypes, boatSpecies,
-  amenities, tripTypes, species, states, cities, reviews, bragBoardPhotos,
+  amenities, tripTypes, species, speciesCategories, speciesAliases, speciesSuggestions,
+  states, cities, reviews, bragBoardPhotos,
   boatSubmissions, claimRequests, destinationPages, contentBlocks,
   siteSettings, emailTemplates, featureComparisonItems, featureTierValues,
   operatorContactLogs, pageSeoSettings,
@@ -187,11 +188,25 @@ export async function adminDeleteTripType(id: number) {
 
 // ===== SPECIES =====
 export async function adminGetSpecies() {
-  return db.select().from(species).orderBy(asc(species.sortOrder));
+  return db
+    .select({
+      id: species.id,
+      name: species.name,
+      slug: species.slug,
+      sortOrder: species.sortOrder,
+      scientificName: species.scientificName,
+      description: species.description,
+      imageUrl: species.imageUrl,
+      categoryId: species.categoryId,
+      categoryName: speciesCategories.name,
+    })
+    .from(species)
+    .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
+    .orderBy(speciesCategories.sortOrder, asc(species.name));
 }
 
-export async function adminCreateSpecies(data: { name: string; slug: string; sortOrder?: number }) {
-  const [s] = await db.insert(species).values(data).returning();
+export async function adminCreateSpecies(data: Record<string, unknown>) {
+  const [s] = await db.insert(species).values(data as never).returning();
   return s;
 }
 
@@ -202,6 +217,66 @@ export async function adminUpdateSpecies(id: number, data: Record<string, unknow
 
 export async function adminDeleteSpecies(id: number) {
   await db.delete(species).where(eq(species.id, id));
+}
+
+export async function adminGetSpeciesAliases(speciesId: number) {
+  return db.select().from(speciesAliases).where(eq(speciesAliases.speciesId, speciesId));
+}
+
+export async function adminSetSpeciesAliases(speciesId: number, aliases: string[]) {
+  await db.delete(speciesAliases).where(eq(speciesAliases.speciesId, speciesId));
+  if (aliases.length > 0) {
+    await db.insert(speciesAliases).values(
+      aliases.map((name) => ({ speciesId, name, nameLower: name.toLowerCase() }))
+    );
+  }
+}
+
+// ===== SPECIES CATEGORIES =====
+export async function adminGetSpeciesCategories() {
+  return db.select().from(speciesCategories).orderBy(asc(speciesCategories.sortOrder));
+}
+
+export async function adminCreateSpeciesCategory(data: Record<string, unknown>) {
+  const [c] = await db.insert(speciesCategories).values(data as never).returning();
+  return c;
+}
+
+export async function adminUpdateSpeciesCategory(id: number, data: Record<string, unknown>) {
+  const [c] = await db.update(speciesCategories).set(data as never).where(eq(speciesCategories.id, id)).returning();
+  return c;
+}
+
+export async function adminDeleteSpeciesCategory(id: number) {
+  await db.delete(speciesCategories).where(eq(speciesCategories.id, id));
+}
+
+// ===== SPECIES SUGGESTIONS =====
+export async function adminGetSpeciesSuggestions() {
+  return db
+    .select({
+      id: speciesSuggestions.id,
+      speciesName: speciesSuggestions.speciesName,
+      commonNames: speciesSuggestions.commonNames,
+      notes: speciesSuggestions.notes,
+      status: speciesSuggestions.status,
+      createdAt: speciesSuggestions.createdAt,
+      operatorId: speciesSuggestions.operatorId,
+      operatorCompany: operators.companyName,
+      operatorEmail: operators.email,
+    })
+    .from(speciesSuggestions)
+    .innerJoin(operators, eq(speciesSuggestions.operatorId, operators.id))
+    .orderBy(desc(speciesSuggestions.createdAt));
+}
+
+export async function adminUpdateSpeciesSuggestion(id: number, status: string) {
+  const [s] = await db
+    .update(speciesSuggestions)
+    .set({ status })
+    .where(eq(speciesSuggestions.id, id))
+    .returning();
+  return s;
 }
 
 // ===== AMENITIES =====

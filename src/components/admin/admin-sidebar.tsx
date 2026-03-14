@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Ship, Users, Settings, Mail, Layers, Crown,
+  Ship, Users, Settings, Mail, Layers, Crown, Fish,
   BarChart3, Map, GitCompare, LogOut, Anchor, Menu, X, Star, ShieldCheck, Camera, MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/destination-pages", label: "Destinations", icon: Map, permission: "destination-pages" },
   { href: "/admin/site-settings", label: "Site Settings", icon: Settings, permission: "site-settings" },
   { href: "/admin/system-emails", label: "Email Templates", icon: Mail, permission: "system-emails" },
+  { href: "/admin/species", label: "Species", icon: Fish, permission: "options" },
   { href: "/admin/options", label: "Options", icon: Layers, permission: "options" },
   { href: "/admin/membership-tiers", label: "Membership Tiers", icon: Crown, permission: "membership-tiers" },
   { href: "/admin/operator-tiers", label: "Operator Tiers", icon: Star, permission: "operator-tiers" },

@@ -39,16 +39,43 @@ export const insertTripTypeSchema = createInsertSchema(tripTypes).omit({ id: tru
 export type InsertTripType = z.infer<typeof insertTripTypeSchema>;
 export type SelectTripType = typeof tripTypes.$inferSelect;
 
+export const speciesCategories = pgTable("species_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  description: text("description"),
+});
+
+export const insertSpeciesCategorySchema = createInsertSchema(speciesCategories).omit({ id: true });
+export type InsertSpeciesCategory = z.infer<typeof insertSpeciesCategorySchema>;
+export type SelectSpeciesCategory = typeof speciesCategories.$inferSelect;
+
 export const species = pgTable("species", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   sortOrder: integer("sort_order").notNull().default(0),
+  categoryId: integer("category_id").references(() => speciesCategories.id),
+  scientificName: text("scientific_name"),
+  description: text("description"),
+  imageUrl: text("image_url"),
 });
 
 export const insertSpeciesSchema = createInsertSchema(species).omit({ id: true });
 export type InsertSpecies = z.infer<typeof insertSpeciesSchema>;
 export type SelectSpecies = typeof species.$inferSelect;
+
+export const speciesAliases = pgTable("species_aliases", {
+  id: serial("id").primaryKey(),
+  speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  nameLower: text("name_lower").notNull(),
+});
+
+export const insertSpeciesAliasSchema = createInsertSchema(speciesAliases).omit({ id: true });
+export type InsertSpeciesAlias = z.infer<typeof insertSpeciesAliasSchema>;
+export type SelectSpeciesAlias = typeof speciesAliases.$inferSelect;
 
 export const amenities = pgTable("amenities", {
   id: serial("id").primaryKey(),
@@ -317,6 +344,24 @@ export const boatSubmissions = pgTable("boat_submissions", {
 export const insertBoatSubmissionSchema = createInsertSchema(boatSubmissions).omit({ id: true, createdAt: true, updatedAt: true, status: true });
 export type InsertBoatSubmission = z.infer<typeof insertBoatSubmissionSchema>;
 export type SelectBoatSubmission = typeof boatSubmissions.$inferSelect;
+
+// ============================================================
+// Species Suggestions (operator-submitted)
+// ============================================================
+
+export const speciesSuggestions = pgTable("species_suggestions", {
+  id: serial("id").primaryKey(),
+  operatorId: integer("operator_id").notNull().references(() => operators.id, { onDelete: "cascade" }),
+  speciesName: text("species_name").notNull(),
+  commonNames: text("common_names"),
+  notes: text("notes"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSpeciesSuggestionSchema = createInsertSchema(speciesSuggestions).omit({ id: true, createdAt: true, status: true });
+export type InsertSpeciesSuggestion = z.infer<typeof insertSpeciesSuggestionSchema>;
+export type SelectSpeciesSuggestion = typeof speciesSuggestions.$inferSelect;
 
 // ============================================================
 // CMS & Configuration

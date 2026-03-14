@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronRight, Fish } from "lucide-react";
-import { getAllSpeciesWithBoatCounts } from "@/lib/db/queries/boats";
+import { ChevronRight, Fish, Search } from "lucide-react";
+import { getAllSpeciesWithBoatCounts, getAllSpeciesCategories } from "@/lib/db/queries/boats";
+import { SpeciesIndexClient } from "./species-index-client";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
@@ -8,14 +9,17 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Fish Species - Party Boat Fishing Targets",
+  title: "Fish Species - Party Boat Fishing Targets | PartyBoatsUSA",
   description:
     "Browse party boat fishing charters by target species. Find boats targeting snapper, grouper, tuna, mahi-mahi, and more across the USA.",
   alternates: { canonical: "/species" },
 };
 
 export default async function SpeciesPage() {
-  const species = await getAllSpeciesWithBoatCounts();
+  const [speciesList, categories] = await Promise.all([
+    getAllSpeciesWithBoatCounts(),
+    getAllSpeciesCategories(),
+  ]);
 
   return (
     <>
@@ -38,36 +42,13 @@ export default async function SpeciesPage() {
           </h1>
           <p className="text-blue-100 max-w-2xl mx-auto">
             Find party boat fishing charters by the species you want to target.
-            From inshore favorites to offshore game fish.
+            From inshore favorites to offshore game fish, we have {speciesList.length} species listed.
           </p>
         </div>
       </section>
 
-      {/* Species Grid */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {species.map((sp) => (
-            <Link
-              key={sp.slug}
-              href={`/species/${sp.slug}`}
-              className="group flex items-center gap-4 p-5 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
-            >
-              <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Fish className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">
-                  {sp.name}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {sp.boatCount} {sp.boatCount === 1 ? "boat" : "boats"}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Species Grid with Client-Side Search */}
+      <SpeciesIndexClient species={speciesList} categories={categories} />
 
       {/* BreadcrumbList JSON-LD */}
       <script

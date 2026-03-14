@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Fish, Tag } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { getBoatsBySpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
@@ -19,8 +19,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getBoatsBySpecies(slug);
   if (!data) return { title: "Species Not Found" };
 
-  const title = `${data.speciesName} Fishing - Party Boat Charters`;
-  const desc = `Find ${data.total} party boat fishing charters targeting ${data.speciesName} across the USA. Compare prices, read reviews, and book your trip.`;
+  const sp = data.species;
+  const title = `${sp.name} Fishing - Party Boat Charters | PartyBoatsUSA`;
+  const desc = sp.description
+    ? sp.description.slice(0, 155)
+    : `Find ${data.total} party boat fishing charters targeting ${sp.name} across the USA. Compare prices, read reviews, and book your trip.`;
 
   return {
     title,
@@ -38,6 +41,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
   const data = await getBoatsBySpecies(slug, currentPage, 50);
   if (!data) notFound();
 
+  const { species: sp, aliases } = data;
   const tierBadges = await getTierBadgesForBoats(data.boats.map((b) => b.operatorId));
 
   return (
@@ -50,28 +54,65 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             <ChevronRight className="h-3 w-3" />
             <Link href="/species" className="hover:text-primary">Fish Species</Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground font-medium">{data.speciesName}</span>
+            {sp.categoryName && (
+              <>
+                <span className="text-muted-foreground">{sp.categoryName}</span>
+                <ChevronRight className="h-3 w-3" />
+              </>
+            )}
+            <span className="text-foreground font-medium">{sp.name}</span>
           </nav>
         </div>
       </div>
 
       {/* Hero */}
       <section className="bg-primary text-white py-10">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
-            {data.speciesName} Fishing Charters
-          </h1>
-          <p className="text-blue-100 max-w-2xl mx-auto">
-            Browse {data.total} party boat charters targeting {data.speciesName} across
-            the United States.
-          </p>
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
+              {sp.name} Fishing Charters
+            </h1>
+            {sp.scientificName && (
+              <p className="text-blue-200 italic text-sm mb-3">{sp.scientificName}</p>
+            )}
+            <p className="text-blue-100 max-w-2xl mx-auto">
+              Browse {data.total} party boat charters targeting {sp.name} across the United States.
+            </p>
+          </div>
         </div>
       </section>
+
+      {/* Species Info Section */}
+      {(sp.description || aliases.length > 0 || sp.categoryName) && (
+        <section className="bg-white border-b">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-3xl mx-auto space-y-4">
+              {sp.description && (
+                <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
+              )}
+              <div className="flex flex-wrap gap-4 text-sm">
+                {sp.categoryName && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Fish className="h-4 w-4" />
+                    <span>Category: <span className="font-medium text-foreground">{sp.categoryName}</span></span>
+                  </div>
+                )}
+                {aliases.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Tag className="h-4 w-4" />
+                    <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Boat Grid */}
       <div className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-display font-bold mb-6">
-          Boats Targeting {data.speciesName}
+          Boats Targeting {sp.name}
           <span className="text-muted-foreground font-normal text-lg ml-2">
             ({data.total})
           </span>
@@ -114,7 +155,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              No boats targeting {data.speciesName} listed yet. Check back soon!
+              No boats targeting {sp.name} listed yet. Check back soon!
             </p>
           </div>
         )}
@@ -130,7 +171,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
               { "@type": "ListItem", position: 2, name: "Fish Species", item: `${SITE_URL}/species` },
-              { "@type": "ListItem", position: 3, name: data.speciesName, item: `${SITE_URL}/species/${slug}` },
+              { "@type": "ListItem", position: 3, name: sp.name, item: `${SITE_URL}/species/${slug}` },
             ],
           }),
         }}
@@ -144,7 +185,7 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              name: `${data.speciesName} Fishing Charters`,
+              name: `${sp.name} Fishing Charters`,
               numberOfItems: data.total,
               itemListElement: data.boats.map((boat, i) => ({
                 "@type": "ListItem",

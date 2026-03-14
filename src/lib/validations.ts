@@ -124,6 +124,24 @@ export const adminSpeciesSchema = z.object({
   name: z.string().min(1).max(100),
   slug: z.string().min(1).max(100),
   sortOrder: z.number().int().min(0).optional(),
+  categoryId: z.number().int().positive().optional().nullable(),
+  scientificName: z.string().max(200).optional().nullable(),
+  description: z.string().max(5000).optional().nullable(),
+  imageUrl: z.string().max(2000).optional().nullable(),
+  aliases: z.array(z.string().max(100)).max(20).optional(),
+});
+
+export const adminSpeciesCategorySchema = z.object({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100),
+  sortOrder: z.number().int().min(0).optional(),
+  description: z.string().max(1000).optional().nullable(),
+});
+
+export const speciesSuggestionSchema = z.object({
+  speciesName: z.string().min(1).max(200),
+  commonNames: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
 });
 
 export const adminTripTypeSchema = z.object({

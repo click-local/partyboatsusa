@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Save, Loader2, X, Plus } from "lucide-react";
+import { SpeciesSelect } from "@/components/species-select";
 
 export interface BoatData {
   name: string;
@@ -48,7 +49,6 @@ export interface BoatData {
 }
 
 interface TripType { id: number; name: string; }
-interface Species { id: number; name: string; }
 interface Amenity { id: number; name: string; icon: string; }
 interface State { id: number; name: string; code: string; }
 
@@ -85,7 +85,6 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
 }) {
   const [data, setData] = useState<BoatData>(mergeWithDefaults(emptyBoat, initialData));
   const [tripTypes, setTripTypes] = useState<TripType[]>([]);
-  const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
@@ -96,11 +95,9 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
     Promise.all([
       fetch("/api/admin/trip-types").then((r) => r.json()),
       fetch("/api/admin/amenities").then((r) => r.json()),
-      fetch("/api/admin/species").then((r) => r.json()),
-    ]).then(([tt, am, sp]) => {
+    ]).then(([tt, am]) => {
       setTripTypes(tt);
       setAmenitiesList(am);
-      setSpeciesList(sp);
     });
   }, []);
 
@@ -352,15 +349,10 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
         <h2 className="text-lg font-semibold">Fishing Details</h2>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Target Species</label>
-          <div className="flex flex-wrap gap-2">
-            {speciesList.map((sp) => (
-              <label key={sp.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.speciesIds.includes(sp.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
-                <input type="checkbox" checked={data.speciesIds.includes(sp.id)} onChange={() => toggleCheckbox("speciesIds", sp.id)} className="sr-only" />
-                {sp.name}
-              </label>
-            ))}
-            {speciesList.length === 0 && <p className="text-sm text-gray-400">No species configured yet. Add them in Options.</p>}
-          </div>
+          <SpeciesSelect
+            selectedIds={data.speciesIds}
+            onChange={(ids) => set("speciesIds", ids)}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">What{"'"}s Included</label>

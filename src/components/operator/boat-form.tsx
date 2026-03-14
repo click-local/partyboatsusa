@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
+import { SpeciesSelect } from "@/components/species-select";
 
 interface TripType { id: number; name: string; }
-interface Species { id: number; name: string; }
 interface Amenity { id: number; name: string; icon: string; }
 
 export interface BoatFormData {
@@ -115,18 +115,22 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
   const [includedInput, setIncludedInput] = useState("");
   const [extrasInput, setExtrasInput] = useState("");
   const [tripTypes, setTripTypes] = useState<TripType[]>([]);
-  const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestName, setSuggestName] = useState("");
+  const [suggestCommon, setSuggestCommon] = useState("");
+  const [suggestNotes, setSuggestNotes] = useState("");
+  const [suggestSubmitting, setSuggestSubmitting] = useState(false);
+  const [suggestSuccess, setSuggestSuccess] = useState(false);
+  const [suggestError, setSuggestError] = useState("");
 
   useEffect(() => {
     Promise.all([
       fetch("/api/operator/trip-types").then((r) => r.json()),
       fetch("/api/operator/amenities").then((r) => r.json()),
-      fetch("/api/operator/species").then((r) => r.json()),
-    ]).then(([tt, am, sp]) => {
+    ]).then(([tt, am]) => {
       setTripTypes(tt);
       setAmenitiesList(am);
-      setSpeciesList(sp);
     });
   }, []);
 
@@ -166,6 +170,38 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
 
   function removeExtra(s: string) {
     update("availableExtras", data.availableExtras.filter((x) => x !== s));
+  }
+
+  async function handleSuggestSubmit() {
+    setSuggestSubmitting(true);
+    setSuggestError("");
+    try {
+      const res = await fetch("/api/operator/species-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          speciesName: suggestName.trim(),
+          commonNames: suggestCommon.trim() || undefined,
+          notes: suggestNotes.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to submit");
+      }
+      setSuggestSuccess(true);
+      setTimeout(() => {
+        setSuggestOpen(false);
+        setSuggestName("");
+        setSuggestCommon("");
+        setSuggestNotes("");
+        setSuggestSuccess(false);
+      }, 2000);
+    } catch (err: unknown) {
+      setSuggestError(err instanceof Error ? err.message : "Failed to submit suggestion");
+    } finally {
+      setSuggestSubmitting(false);
+    }
   }
 
   function toggleCheckbox(field: "tripTypeIds" | "amenityIds" | "speciesIds", id: number) {
@@ -395,16 +431,79 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
       {/* Target Species */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Target Species</h2>
-        <div className="flex flex-wrap gap-2">
-          {speciesList.map((sp) => (
-            <label key={sp.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.speciesIds.includes(sp.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
-              <input type="checkbox" checked={data.speciesIds.includes(sp.id)} onChange={() => toggleCheckbox("speciesIds", sp.id)} className="sr-only" />
-              {sp.name}
-            </label>
-          ))}
-          {speciesList.length === 0 && <p className="text-sm text-muted-foreground">No species available yet.</p>}
-        </div>
+        <p className="text-sm text-muted-foreground">Search or browse to select the species your boat targets.</p>
+        <SpeciesSelect
+          selectedIds={data.speciesIds}
+          onChange={(ids) => update("speciesIds", ids)}
+          showSuggest
+          onSuggest={() => setSuggestOpen(true)}
+        />
       </section>
+
+      {/* Species Suggestion Dialog */}
+      {suggestOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-semibold">Suggest a Species</h3>
+            <p className="text-sm text-gray-500">
+              Can&apos;t find a species in our database? Let us know and we&apos;ll review it for addition.
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Species Name *</label>
+              <input
+                type="text"
+                value={suggestName}
+                onChange={(e) => setSuggestName(e.target.value)}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="e.g., Yellowfin Tuna"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Other Common Names</label>
+              <input
+                type="text"
+                value={suggestCommon}
+                onChange={(e) => setSuggestCommon(e.target.value)}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="e.g., Ahi, Allison Tuna"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Notes</label>
+              <textarea
+                value={suggestNotes}
+                onChange={(e) => setSuggestNotes(e.target.value)}
+                rows={2}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Any additional context..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setSuggestOpen(false); setSuggestName(""); setSuggestCommon(""); setSuggestNotes(""); setSuggestError(""); }}
+                className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!suggestName.trim() || suggestSubmitting}
+                onClick={handleSuggestSubmit}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {suggestSubmitting ? "Submitting..." : "Submit Suggestion"}
+              </button>
+            </div>
+            {suggestSuccess && (
+              <p className="text-sm text-green-600">Suggestion submitted! We&apos;ll review it shortly.</p>
+            )}
+            {suggestError && (
+              <p className="text-sm text-red-600">{suggestError}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* What's Included */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
