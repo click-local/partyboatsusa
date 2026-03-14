@@ -303,7 +303,8 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Images</h2>
         <div>
-          <label className="block text-sm font-medium mb-2">Primary Image</label>
+          <label className="block text-sm font-medium mb-1">Primary Image</label>
+          <p className="text-sm text-muted-foreground mb-2">Upload a high-quality photo of your boat. This is the main image shown on your listing and in search results.</p>
           <ImageUpload
             value={data.primaryImageUrl}
             onChange={(url) => update("primaryImageUrl", url)}
