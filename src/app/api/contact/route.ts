@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import { buildContactFormEmail } from "@/lib/email/templates";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const ADMIN_EMAIL = "support@partyboatsusa.com";
+const EMAIL_FROM =
+  process.env.EMAIL_FROM ||
+  "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,9 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // TODO: Send email via Resend once RESEND_API_KEY is configured
-    // For now, log the contact submission
-    console.log("Contact form submission:", { name, email, subject, message });
+    const html = buildContactFormEmail({ name, email, subject, message });
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [ADMIN_EMAIL],
+      replyTo: email,
+      subject: `Contact Form: ${subject}`,
+      html,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

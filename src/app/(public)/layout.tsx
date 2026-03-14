@@ -6,7 +6,7 @@ import { siteSettings } from "@/lib/db/schema";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function PublicLayout({
   children,

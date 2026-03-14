@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Ship, Users, Settings, Mail, Layers, Crown,
-  BarChart3, Map, GitCompare, LogOut, Anchor, Menu, X, FileText, Star, ShieldCheck, Camera,
+  BarChart3, Map, GitCompare, LogOut, Anchor, Menu, X, FileText, Star, ShieldCheck, Camera, MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/boats", label: "Boats", icon: Ship },
   { href: "/admin/claims", label: "Claim Requests", icon: ShieldCheck },
   { href: "/admin/brag-board", label: "Brag Board", icon: Camera },
+  { href: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { href: "/admin/crm", label: "CRM", icon: Users },
   { href: "/admin/destination-pages", label: "Destinations", icon: Map },
   { href: "/admin/site-settings", label: "Site Settings", icon: Settings },

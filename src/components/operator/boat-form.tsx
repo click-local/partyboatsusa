@@ -464,7 +464,7 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
       {/* Available Extras */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Available Extras</h2>
-        <p className="text-sm text-muted-foreground">Add optional upgrades or extras available for purchase (e.g., private charter, pool rental).</p>
+        <p className="text-sm text-muted-foreground">Add optional upgrades or extras available for purchase (e.g., private charter, fish cleaning, cooler rental).</p>
         <div className="flex gap-2">
           <input
             type="text"

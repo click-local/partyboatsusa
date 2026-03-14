@@ -399,12 +399,8 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
             Published
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={data.isFeatured} onChange={(e) => set("isFeatured", e.target.checked)} className="rounded" />
-            Featured (Operator)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={data.isFeaturedAdmin} onChange={(e) => set("isFeaturedAdmin", e.target.checked)} className="rounded" />
-            Featured (Admin)
+            Featured
           </label>
         </div>
       </section>

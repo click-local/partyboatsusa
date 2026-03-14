@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800;
 
 interface Props {
   params: Promise<{ stateSlug: string }>;

@@ -307,3 +307,33 @@ ${ctaButton("View Full Reply", `${SITE_URL}/boats/${data.boatSlug}`)}`;
 
   return emailWrapper(content);
 }
+
+// ---- Contact Form Submission (to Admin) ----
+
+interface ContactFormNotificationData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export function buildContactFormEmail(data: ContactFormNotificationData): string {
+  const escapedMessage = data.message.replace(/\n/g, "<br>");
+
+  const content = `
+<h2 style="margin:0 0 8px;font-size:18px;color:#111827;">New Contact Form Submission</h2>
+<p style="margin:0 0 20px;font-size:13px;color:#6b7280;">Someone has reached out via the contact form on Party Boats USA.</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0;">
+<tr><td style="padding:20px;">
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">From: <strong style="color:#111827;">${data.name}</strong></p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Email: <a href="mailto:${data.email}" style="color:#004685;">${data.email}</a></p>
+  <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Subject: <strong style="color:#111827;">${data.subject}</strong></p>
+  <p style="margin:0;font-size:14px;color:#374151;line-height:1.5;">${escapedMessage}</p>
+</td></tr>
+</table>
+
+<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">You can reply directly to this person at ${data.email}.</p>`;
+
+  return emailWrapper(content);
+}

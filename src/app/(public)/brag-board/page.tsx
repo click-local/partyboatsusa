@@ -10,7 +10,7 @@ import { eq, asc } from "drizzle-orm";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Brag Board",
