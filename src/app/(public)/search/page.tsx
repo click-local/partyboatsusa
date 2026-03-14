@@ -77,21 +77,14 @@ function SearchPageContent() {
       if (query) params.set("q", query);
       if (selectedStates.length) params.set("states", selectedStates.join(","));
       if (selectedAmenities.length) params.set("amenities", selectedAmenities.join(","));
+      if (minRating > 0) params.set("minRating", String(minRating));
       params.set("sort", sort);
       params.set("page", String(page));
       params.set("limit", "18");
 
       const res = await fetch(`/api/boats/search?${params.toString()}`);
       if (res.ok) {
-        let data = await res.json();
-        // Client-side rating filter
-        if (minRating > 0 && data.boats) {
-          data = {
-            ...data,
-            boats: data.boats.filter((b: SelectBoat) => Number(b.rating) >= minRating),
-            total: data.boats.filter((b: SelectBoat) => Number(b.rating) >= minRating).length,
-          };
-        }
+        const data = await res.json();
         setResults(data);
       }
     } catch (err) {

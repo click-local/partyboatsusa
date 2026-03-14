@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, amenities, tripTypes, operators, membershipTiers, reviews, bragBoardPhotos } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, amenities, tripTypes, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -169,11 +169,26 @@ export async function getBoatBySlug(slug: string) {
     }
   }
 
+  // Get state slug for breadcrumb links
+  let stateSlug: string | null = null;
+  let stateName: string | null = null;
+  if (boat.stateCode) {
+    const [state] = await db
+      .select({ slug: states.slug, name: states.name })
+      .from(states)
+      .where(eq(states.code, boat.stateCode))
+      .limit(1);
+    stateSlug = state?.slug || null;
+    stateName = state?.name || null;
+  }
+
   return {
     ...boat,
     amenities: boatAmenitiesList.map((ba) => ba.amenity),
     tripTypes: boatTripTypesList.map((bt) => bt.tripType),
     operatorTier,
+    stateSlug,
+    stateName,
   };
 }
 

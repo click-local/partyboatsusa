@@ -3,6 +3,13 @@ import { getOperator } from "@/lib/auth/get-operator";
 import { db } from "@/lib/db";
 import { bragBoardPhotos, boats } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { Resend } from "resend";
+import { buildPhotoApprovedEmail } from "@/lib/email/templates";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const EMAIL_FROM =
+  process.env.EMAIL_FROM ||
+  "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>";
 
 async function verifyPhotoOwnership(operatorId: number, photoId: number) {
   const result = await db
@@ -41,6 +48,34 @@ export async function POST(
     .update(bragBoardPhotos)
     .set({ status: "approved" })
     .where(eq(bragBoardPhotos.id, photoId));
+
+  // Send approval email to submitter
+  const [photo] = await db
+    .select({
+      submitterName: bragBoardPhotos.submitterName,
+      submitterEmail: bragBoardPhotos.submitterEmail,
+      boatName: boats.name,
+      boatSlug: boats.slug,
+    })
+    .from(bragBoardPhotos)
+    .innerJoin(boats, eq(bragBoardPhotos.boatId, boats.id))
+    .where(eq(bragBoardPhotos.id, photoId));
+
+  if (photo?.submitterEmail) {
+    const html = buildPhotoApprovedEmail({
+      boatName: photo.boatName,
+      boatSlug: photo.boatSlug,
+      submitterName: photo.submitterName,
+    });
+    resend.emails
+      .send({
+        from: EMAIL_FROM,
+        to: [photo.submitterEmail],
+        subject: `Your catch photo has been approved!`,
+        html,
+      })
+      .catch(() => {});
+  }
 
   return NextResponse.json({ success: true });
 }

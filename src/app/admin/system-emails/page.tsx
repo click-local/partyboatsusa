@@ -154,7 +154,7 @@ export default function AdminSystemEmailsPage() {
         <EmailForm data={editing as unknown as Record<string, unknown>} onChange={(d) => setEditing(d as unknown as EmailTemplate)} onSubmit={handleUpdate} title={`Edit: ${editing.name}`} submitLabel="Save Changes" onCancel={() => setEditing(null)} />
       )}
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-white rounded-xl border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>

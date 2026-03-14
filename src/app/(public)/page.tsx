@@ -13,8 +13,18 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
+  title: "Party Boats USA - Find the Best Party Boat Fishing Trips in the USA",
+  description:
+    "Discover and book top-rated headboats and open party fishing charters across the United States. Compare prices, read reviews, and find the perfect fishing trip.",
   alternates: {
     canonical: "/",
+  },
+  openGraph: {
+    title: "Party Boats USA - Find the Best Party Boat Fishing Trips",
+    description:
+      "Discover and book top-rated headboats and open party fishing charters across the United States.",
+    url: SITE_URL,
+    type: "website",
   },
 };
 
@@ -286,7 +296,31 @@ export default async function Home() {
             logo: `${SITE_URL}/opengraph.jpg`,
             description:
               "Discover and book top-rated headboats and open party fishing charters across the United States.",
-            sameAs: [],
+            contactPoint: {
+              "@type": "ContactPoint",
+              contactType: "Customer Support",
+              url: `${SITE_URL}/contact`,
+            },
+          }),
+        }}
+      />
+      {/* WebSite + SearchAction JSON-LD (enables sitelinks searchbox) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Party Boats USA",
+            url: SITE_URL,
+            potentialAction: {
+              "@type": "SearchAction",
+              target: {
+                "@type": "EntryPoint",
+                urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+              },
+              "query-input": "required name=search_term_string",
+            },
           }),
         }}
       />

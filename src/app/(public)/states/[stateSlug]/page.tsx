@@ -18,6 +18,7 @@ export const revalidate = 1800;
 
 interface Props {
   params: Promise<{ stateSlug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -55,14 +56,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function StatePage({ params }: Props) {
+export default async function StatePage({ params, searchParams }: Props) {
   const { stateSlug } = await params;
+  const { page: pageParam } = await searchParams;
+  const currentPage = Math.max(1, Number(pageParam) || 1);
   const state = await getStateBySlug(stateSlug);
   if (!state) notFound();
 
   const [destPage, boatData, cities] = await Promise.all([
     getDestinationPageByStateSlug(stateSlug),
-    getBoatsByState(state.code, 1, 50),
+    getBoatsByState(state.code, currentPage, 50),
     getCitiesByState(state.code),
   ]);
 
@@ -181,11 +184,39 @@ export default async function StatePage({ params }: Props) {
             </h2>
 
             {boatData.boats.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {boatData.boats.map((boat) => (
-                  <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges.get(boat.operatorId!) || null} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {boatData.boats.map((boat) => (
+                    <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges.get(boat.operatorId!) || null} />
+                  ))}
+                </div>
+
+                {boatData.totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    {currentPage > 1 && (
+                      <Link
+                        href={`/states/${stateSlug}?page=${currentPage - 1}`}
+                        className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
+                      >
+                        <ChevronRight className="h-4 w-4 rotate-180" />
+                        Previous
+                      </Link>
+                    )}
+                    <span className="text-sm text-muted-foreground px-4">
+                      Page {currentPage} of {boatData.totalPages}
+                    </span>
+                    {currentPage < boatData.totalPages && (
+                      <Link
+                        href={`/states/${stateSlug}?page=${currentPage + 1}`}
+                        className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">

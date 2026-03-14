@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   MapPin, Phone, Globe, Mail, Star, Users, Anchor, Fish, Clock,
-  ChevronRight, ExternalLink, Facebook, Instagram, Youtube, Ship, Info,
+  ChevronRight, ExternalLink, Facebook, Instagram, Youtube, Twitter, Ship, Info,
 } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +142,7 @@ export default async function BoatDetailPage({ params }: Props) {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
       { "@type": "ListItem", position: 2, name: "Boats", item: `${SITE_URL}/search` },
-      { "@type": "ListItem", position: 3, name: boat.stateCode, item: `${SITE_URL}/states/${boat.stateCode.toLowerCase()}` },
+      { "@type": "ListItem", position: 3, name: boat.stateName || boat.stateCode, item: `${SITE_URL}/states/${boat.stateSlug || boat.stateCode.toLowerCase()}` },
       { "@type": "ListItem", position: 4, name: boat.name, item: `${SITE_URL}/boats/${slug}` },
     ],
   };
@@ -166,8 +166,8 @@ export default async function BoatDetailPage({ params }: Props) {
             <ChevronRight className="h-3 w-3" />
             <Link href="/search" className="hover:text-primary">Boats</Link>
             <ChevronRight className="h-3 w-3" />
-            <Link href={`/states/${boat.stateCode.toLowerCase()}`} className="hover:text-primary">
-              {boat.stateCode}
+            <Link href={`/states/${boat.stateSlug || boat.stateCode.toLowerCase()}`} className="hover:text-primary">
+              {boat.stateName || boat.stateCode}
             </Link>
             <ChevronRight className="h-3 w-3" />
             <span className="text-foreground font-medium truncate">{boat.name}</span>
@@ -425,9 +425,9 @@ export default async function BoatDetailPage({ params }: Props) {
                           </a>
                         )}
 
-                        {/* Social Links -gated by tier */}
+                        {/* Social Links - gated by tier */}
                         {boat.operatorTier?.showSocialMedia !== false &&
-                         (boat.socialFacebook || boat.socialInstagram || boat.socialYoutube) && (
+                         (boat.socialFacebook || boat.socialInstagram || boat.socialYoutube || boat.socialX) && (
                           <div className="flex gap-3 justify-center pt-2">
                             {boat.socialFacebook && (
                               <a href={boat.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 transition-colors">
@@ -437,6 +437,11 @@ export default async function BoatDetailPage({ params }: Props) {
                             {boat.socialInstagram && (
                               <a href={boat.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-300 hover:border-pink-600 hover:bg-pink-50 transition-colors">
                                 <Instagram className="h-5 w-5 text-pink-600" />
+                              </a>
+                            )}
+                            {boat.socialX && (
+                              <a href={boat.socialX} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-300 hover:border-gray-900 hover:bg-gray-50 transition-colors">
+                                <Twitter className="h-5 w-5 text-gray-900" />
                               </a>
                             )}
                             {boat.socialYoutube && (
@@ -641,7 +646,7 @@ export default async function BoatDetailPage({ params }: Props) {
       </div>
 
       {/* Mobile Fixed Booking Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-3 flex items-center justify-between gap-3 lg:hidden z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between gap-3 lg:hidden z-40">
         <div className="flex flex-col min-w-0">
           <span className="text-xs text-muted-foreground">From</span>
           <span className="text-lg font-bold text-primary truncate">
