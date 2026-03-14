@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Anchor, Loader2, Eye, EyeOff, ShieldCheck, Settings } from "lucide-react";
 import { toast } from "sonner";
 
@@ -113,7 +114,7 @@ function ClaimContent() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             {logoUrl ? (
-              <img src={logoUrl} alt="Party Boats USA" className="h-16 lg:h-24 w-auto mx-auto" />
+              <Image src={logoUrl} alt="Party Boats USA" width={180} height={96} className="h-16 lg:h-24 w-auto mx-auto" />
             ) : (
               <div className="inline-flex items-center gap-2">
                 <Anchor className="h-8 w-8 text-primary" />

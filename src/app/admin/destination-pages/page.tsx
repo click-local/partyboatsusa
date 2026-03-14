@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Map, Plus, Trash2, Edit, Loader2, Save, X, CheckCircle, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
 interface DestPage {
   id: number;
@@ -321,7 +322,7 @@ export default function AdminDestinationPagesPage() {
                 <tr key={page.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     {page.cardImageUrl ? (
-                      <img src={page.cardImageUrl} alt={name} className="h-10 w-16 rounded object-cover border" />
+                      <Image src={page.cardImageUrl} alt={name} width={64} height={40} className="h-10 w-16 rounded object-cover border" />
                     ) : (
                       <div className="h-10 w-16 rounded bg-gray-100 flex items-center justify-center">
                         <Map className="h-4 w-4 text-gray-300" />
