@@ -8,11 +8,15 @@ import {
 } from "@/lib/email/send-notification";
 import { buildReviewNotificationEmail } from "@/lib/email/templates";
 import { reviewSubmissionSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const limited = rateLimit(request, { limit: 10, windowMs: 60_000, prefix: "review" });
+  if (limited) return limited;
+
   try {
     await params; // resolve params
     const body = await request.json();

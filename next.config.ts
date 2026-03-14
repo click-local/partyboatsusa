@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
       ],
     },
+    {
+      // Prevent image indexing and discourage hotlinking
+      source: "/_next/image",
+      headers: [
+        { key: "X-Robots-Tag", value: "noindex, noimageindex" },
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
   ],
 };
 

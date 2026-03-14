@@ -8,8 +8,12 @@ import {
 } from "@/lib/email/send-notification";
 import { buildBragBoardNotificationEmail } from "@/lib/email/templates";
 import { bragBoardSubmissionSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, { limit: 10, windowMs: 60_000, prefix: "brag" });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
 

@@ -5,8 +5,12 @@ import { operators, membershipTiers } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { registerSchema } from "@/lib/validations/operator";
 import { logOperatorContact } from "@/lib/db/queries/operators";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, { limit: 5, windowMs: 60_000, prefix: "register" });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);

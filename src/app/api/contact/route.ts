@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { buildContactFormEmail } from "@/lib/email/templates";
 import { contactFormSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const ADMIN_EMAIL = "support@partyboatsusa.com";
@@ -10,6 +11,9 @@ const EMAIL_FROM =
   "PartyBoatsUSA <noreply@notifications.partyboatsusa.com>";
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, { limit: 5, windowMs: 60_000, prefix: "contact" });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
 

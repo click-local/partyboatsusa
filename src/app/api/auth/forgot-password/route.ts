@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { forgotPasswordSchema } from "@/lib/validations/operator";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, { limit: 5, windowMs: 60_000, prefix: "forgot-pw" });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = forgotPasswordSchema.safeParse(body);

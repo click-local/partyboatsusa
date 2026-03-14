@@ -3,8 +3,11 @@ import { searchBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { db } from "@/lib/db";
 import { boats, states, amenities, boatAmenities } from "@/lib/db/schema";
 import { eq, sql, asc } from "drizzle-orm";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const limited = rateLimit(request, { limit: 60, windowMs: 60_000, prefix: "search" });
+  if (limited) return limited;
   const params = request.nextUrl.searchParams;
 
   // Return filter metadata (states & amenities that have listings)
