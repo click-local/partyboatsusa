@@ -13,15 +13,21 @@ export default function EditBoatPage() {
   const boatId = params.id as string;
 
   const [boat, setBoat] = useState<Partial<BoatFormData> | null>(null);
+  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/operator/boats/${boatId}`)
-      .then((r) => {
+    Promise.all([
+      fetch(`/api/operator/boats/${boatId}`).then((r) => {
         if (!r.ok) throw new Error("Not found");
         return r.json();
+      }),
+      fetch("/api/operator/profile").then((r) => r.json()),
+    ])
+      .then(([boatData, profile]) => {
+        setBoat(boatData);
+        setIsPro(profile?.tier?.isHighestTier || false);
       })
-      .then(setBoat)
       .catch(() => {
         toast.error("Boat not found");
         router.push("/operator/boats");
@@ -77,6 +83,7 @@ export default function EditBoatPage() {
         initialData={boat}
         onSubmit={handleSubmit}
         submitLabel="Save Changes"
+        isPro={isPro}
       />
     </div>
   );

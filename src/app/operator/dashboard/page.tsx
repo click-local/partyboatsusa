@@ -15,7 +15,6 @@ import {
   MessageSquare,
   ExternalLink,
   Pencil,
-  Settings,
   Anchor,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -151,7 +150,7 @@ function DashboardContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold">
-            Welcome back, {operator.contactName}
+            Welcome back, {operator.contactName.split(" ")[0]}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {operator.companyName}
@@ -481,32 +480,6 @@ function DashboardContent() {
         )}
       </section>
 
-      {/* Quick Actions */}
-      <section>
-        <h2 className="text-lg font-display font-semibold mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <QuickAction
-            icon={Plus}
-            label="Add New Boat"
-            description="List a new boat on Party Boats USA"
-            href="/operator/boats/add"
-          />
-          <QuickAction
-            icon={Camera}
-            label="View Brag Board"
-            description="See catch photos from your customers"
-            href="/brag-board"
-          />
-          <QuickAction
-            icon={Settings}
-            label="Account Settings"
-            description="Update your profile and preferences"
-            href="/operator/settings"
-          />
-        </div>
-      </section>
     </div>
   );
 }
@@ -541,37 +514,6 @@ function StatCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function QuickAction({
-  icon: Icon,
-  label,
-  description,
-  href,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-white rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group"
-    >
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <p className="text-sm font-medium group-hover:text-primary transition-colors">
-            {label}
-          </p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-      </div>
-    </Link>
   );
 }
 

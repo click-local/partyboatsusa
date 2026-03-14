@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Save, Plus, X } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
 
 export interface BoatFormData {
@@ -22,8 +23,6 @@ export interface BoatFormData {
   phone: string;
   email: string;
   websiteUrl: string;
-  bookingUrl: string;
-  bookingButtonText: string;
   socialX: string;
   socialFacebook: string;
   socialInstagram: string;
@@ -31,6 +30,8 @@ export interface BoatFormData {
   primaryImageUrl: string;
   galleryImageUrls: string[];
   targetSpecies: string[];
+  whatsIncluded: string[];
+  availableExtras: string[];
   tripTypeIds: number[];
   amenityIds: number[];
 }
@@ -53,8 +54,6 @@ const DEFAULT_DATA: BoatFormData = {
   phone: "",
   email: "",
   websiteUrl: "",
-  bookingUrl: "",
-  bookingButtonText: "Book Now",
   socialX: "",
   socialFacebook: "",
   socialInstagram: "",
@@ -62,6 +61,8 @@ const DEFAULT_DATA: BoatFormData = {
   primaryImageUrl: "",
   galleryImageUrls: [],
   targetSpecies: [],
+  whatsIncluded: [],
+  availableExtras: [],
   tripTypeIds: [],
   amenityIds: [],
 };
@@ -70,6 +71,7 @@ interface BoatFormProps {
   initialData?: Partial<BoatFormData>;
   onSubmit: (data: BoatFormData) => Promise<void>;
   submitLabel?: string;
+  isPro?: boolean;
 }
 
 const US_STATES = [
@@ -100,10 +102,12 @@ const US_STATES = [
   { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" },
 ];
 
-export function BoatForm({ initialData, onSubmit, submitLabel = "Submit" }: BoatFormProps) {
+export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro = false }: BoatFormProps) {
   const [data, setData] = useState<BoatFormData>({ ...DEFAULT_DATA, ...initialData });
   const [saving, setSaving] = useState(false);
   const [speciesInput, setSpeciesInput] = useState("");
+  const [includedInput, setIncludedInput] = useState("");
+  const [extrasInput, setExtrasInput] = useState("");
 
   function update<K extends keyof BoatFormData>(key: K, value: BoatFormData[K]) {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -129,6 +133,30 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit" }: Boat
 
   function removeSpecies(s: string) {
     update("targetSpecies", data.targetSpecies.filter((x) => x !== s));
+  }
+
+  function addIncluded() {
+    const val = includedInput.trim();
+    if (val && !data.whatsIncluded.includes(val)) {
+      update("whatsIncluded", [...data.whatsIncluded, val]);
+    }
+    setIncludedInput("");
+  }
+
+  function removeIncluded(s: string) {
+    update("whatsIncluded", data.whatsIncluded.filter((x) => x !== s));
+  }
+
+  function addExtra() {
+    const val = extrasInput.trim();
+    if (val && !data.availableExtras.includes(val)) {
+      update("availableExtras", [...data.availableExtras, val]);
+    }
+    setExtrasInput("");
+  }
+
+  function removeExtra(s: string) {
+    update("availableExtras", data.availableExtras.filter((x) => x !== s));
   }
 
   function addGalleryImage(url: string) {
@@ -243,11 +271,6 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit" }: Boat
               className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="https://yourcharter.com" />
           </Field>
-          <Field label="Booking URL">
-            <input type="url" value={data.bookingUrl} onChange={(e) => update("bookingUrl", e.target.value)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="https://yourcharter.com/book" />
-          </Field>
         </div>
       </section>
 
@@ -289,24 +312,39 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit" }: Boat
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Gallery Images</label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.galleryImageUrls.map((url, i) => (
-              <div key={i} className="relative h-32 rounded-lg overflow-hidden border border-border">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeGalleryImage(i)}
-                  className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            <ImageUpload
-              onChange={addGalleryImage}
-              label="Add Photo"
-            />
-          </div>
+          {isPro ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {data.galleryImageUrls.map((url, i) => (
+                <div key={i} className="relative h-32 rounded-lg overflow-hidden border border-border">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryImage(i)}
+                    className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <ImageUpload
+                onChange={addGalleryImage}
+                label="Add Photo"
+              />
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center bg-muted/30">
+              <p className="text-sm text-muted-foreground mb-2">
+                Photo galleries are available on the Pro Captain plan.
+              </p>
+              <Link
+                href="/operator/upgrade"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <ArrowUpCircle className="h-4 w-4" />
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -333,6 +371,70 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit" }: Boat
               <span key={s} className="inline-flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                 {s}
                 <button type="button" onClick={() => removeSpecies(s)} className="hover:text-red-500">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* What's Included */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-lg font-semibold">What&apos;s Included</h2>
+        <p className="text-sm text-muted-foreground">Add items that are included with a trip (e.g., bait, tackle, rod rental, fish cleaning).</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={includedInput}
+            onChange={(e) => setIncludedInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addIncluded())}
+            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="e.g., Bait & Tackle"
+          />
+          <button type="button" onClick={addIncluded}
+            className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+        {data.whatsIncluded.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {data.whatsIncluded.map((s) => (
+              <span key={s} className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-sm">
+                {s}
+                <button type="button" onClick={() => removeIncluded(s)} className="hover:text-red-500">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Available Extras */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Available Extras</h2>
+        <p className="text-sm text-muted-foreground">Add optional upgrades or extras available for purchase (e.g., private charter, pool rental).</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={extrasInput}
+            onChange={(e) => setExtrasInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addExtra())}
+            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="e.g., Private Charter"
+          />
+          <button type="button" onClick={addExtra}
+            className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+        {data.availableExtras.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {data.availableExtras.map((s) => (
+              <span key={s} className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm">
+                {s}
+                <button type="button" onClick={() => removeExtra(s)} className="hover:text-red-500">
                   <X className="h-3 w-3" />
                 </button>
               </span>

@@ -66,15 +66,18 @@ export async function PUT(
     "name", "operatorName", "descriptionShort", "descriptionLong",
     "cityName", "portName", "streetAddress", "zipCode",
     "latitude", "longitude", "minPricePerPerson", "maxPricePerPerson",
-    "capacity", "phone", "email", "websiteUrl", "bookingUrl",
-    "bookingLinkTarget", "bookingButtonText",
+    "capacity", "phone", "email", "websiteUrl",
     "socialX", "socialFacebook", "socialInstagram", "socialYoutube",
     "primaryImageUrl", "imageFocalPointX", "imageFocalPointY",
     "galleryImageUrls", "targetSpecies", "whatsIncluded", "availableExtras",
   ];
 
+  // Pro-only fields: gallery images
+  const isPro = operator.tier?.isHighestTier || false;
+
   for (const key of editableKeys) {
     if (key in body) {
+      if (key === "galleryImageUrls" && !isPro) continue;
       allowedFields[key] = body[key];
     }
   }
