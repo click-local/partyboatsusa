@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight, Fish, Tag } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { getBoatsBySpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
@@ -54,9 +55,9 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             <ChevronRight className="h-3 w-3" />
             <Link href="/species" className="hover:text-primary">Fish Species</Link>
             <ChevronRight className="h-3 w-3" />
-            {sp.categoryName && (
+            {sp.categoryName && sp.categorySlug && (
               <>
-                <span className="text-muted-foreground">{sp.categoryName}</span>
+                <Link href={`/species/category/${sp.categorySlug}`} className="hover:text-primary">{sp.categoryName}</Link>
                 <ChevronRight className="h-3 w-3" />
               </>
             )}
@@ -69,6 +70,19 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
       <section className="bg-primary text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
+            {sp.imageUrl && (
+              <div className="mb-5 inline-block">
+                <div className="bg-white/10 backdrop-blur rounded-xl p-3 inline-block">
+                  <Image
+                    src={sp.imageUrl}
+                    alt={sp.name}
+                    width={200}
+                    height={120}
+                    className="h-24 md:h-32 w-auto object-contain drop-shadow-lg"
+                  />
+                </div>
+              </div>
+            )}
             <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
               {sp.name} Fishing Charters
             </h1>
@@ -91,10 +105,10 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
                 <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
               )}
               <div className="flex flex-wrap gap-4 text-sm">
-                {sp.categoryName && (
+                {sp.categoryName && sp.categorySlug && (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Fish className="h-4 w-4" />
-                    <span>Category: <span className="font-medium text-foreground">{sp.categoryName}</span></span>
+                    <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
                   </div>
                 )}
                 {aliases.length > 0 && (
@@ -171,7 +185,8 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
               { "@type": "ListItem", position: 2, name: "Fish Species", item: `${SITE_URL}/species` },
-              { "@type": "ListItem", position: 3, name: sp.name, item: `${SITE_URL}/species/${slug}` },
+              ...(sp.categorySlug ? [{ "@type": "ListItem", position: 3, name: sp.categoryName, item: `${SITE_URL}/species/category/${sp.categorySlug}` }] : []),
+              { "@type": "ListItem", position: sp.categorySlug ? 4 : 3, name: sp.name, item: `${SITE_URL}/species/${slug}` },
             ],
           }),
         }}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Fish, Search, ChevronRight } from "lucide-react";
 
 interface SpeciesItem {
@@ -9,6 +10,7 @@ interface SpeciesItem {
   name: string;
   slug: string;
   scientificName: string | null;
+  imageUrl: string | null;
   categoryId: number | null;
   categoryName: string | null;
   categorySlug: string | null;
@@ -101,7 +103,16 @@ export function SpeciesIndexClient({
             if (catSpecies.length === 0) return null;
             return (
               <div key={cat.id}>
-                <h2 className="text-xl font-display font-bold mb-4 border-b pb-2">{cat.name}</h2>
+                <Link
+                  href={`/species/category/${cat.slug}`}
+                  className="flex items-center gap-2 text-xl font-display font-bold mb-4 border-b pb-2 hover:text-primary transition-colors group"
+                >
+                  {cat.name}
+                  <span className="text-sm font-normal text-muted-foreground group-hover:text-primary">
+                    ({catSpecies.length})
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary ml-auto" />
+                </Link>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {catSpecies.map((sp) => (
                     <SpeciesCard key={sp.id} species={sp} />
@@ -145,9 +156,21 @@ function SpeciesCard({ species }: { species: SpeciesItem }) {
       href={`/species/${species.slug}`}
       className="group flex items-center gap-4 p-4 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
     >
-      <div className="flex-shrink-0 w-11 h-11 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-        <Fish className="h-5 w-5 text-primary" />
-      </div>
+      {species.imageUrl ? (
+        <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden bg-gray-50">
+          <Image
+            src={species.imageUrl}
+            alt={species.name}
+            width={44}
+            height={44}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      ) : (
+        <div className="flex-shrink-0 w-11 h-11 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <Fish className="h-5 w-5 text-primary" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <h3 className="font-display font-semibold group-hover:text-primary transition-colors">
           {species.name}

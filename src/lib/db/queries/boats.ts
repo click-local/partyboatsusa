@@ -485,3 +485,35 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
     return null;
   }
 }
+
+export async function getSpeciesByCategory(categorySlug: string) {
+  try {
+    const [cat] = await db
+      .select()
+      .from(speciesCategories)
+      .where(eq(speciesCategories.slug, categorySlug))
+      .limit(1);
+    if (!cat) return null;
+
+    const speciesList = await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        scientificName: species.scientificName,
+        description: species.description,
+        imageUrl: species.imageUrl,
+        boatCount: sql<number>`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END)`.as("boat_count"),
+      })
+      .from(species)
+      .leftJoin(boatSpecies, eq(boatSpecies.speciesId, species.id))
+      .leftJoin(boats, eq(boatSpecies.boatId, boats.id))
+      .where(eq(species.categoryId, cat.id))
+      .groupBy(species.id, species.name, species.slug, species.scientificName, species.description, species.imageUrl)
+      .orderBy(species.name);
+
+    return { category: cat, species: speciesList };
+  } catch {
+    return null;
+  }
+}
