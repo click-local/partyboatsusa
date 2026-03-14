@@ -67,6 +67,21 @@ export async function searchBoats(filters: SearchFilters) {
     );
   }
 
+  // Amenity filter via join table
+  if (amenityFilters && amenityFilters.length > 0) {
+    const amenityIds = amenityFilters.map(Number).filter((n) => !isNaN(n));
+    if (amenityIds.length > 0) {
+      conditions.push(
+        sql`${boats.id} IN (
+          SELECT ba.boat_id FROM boat_amenities ba
+          WHERE ba.amenity_id IN (${sql.join(amenityIds.map(id => sql`${id}`), sql`, `)})
+          GROUP BY ba.boat_id
+          HAVING COUNT(DISTINCT ba.amenity_id) = ${amenityIds.length}
+        )`
+      );
+    }
+  }
+
   if (minPrice !== undefined) {
     conditions.push(gte(boats.minPricePerPerson, String(minPrice)));
   }
@@ -149,61 +164,47 @@ export async function getBoatBySlug(slug: string) {
 
   if (!boat) return null;
 
-  // Get amenities
-  const boatAmenitiesList = await db
-    .select({ amenity: amenities })
-    .from(boatAmenities)
-    .innerJoin(amenities, eq(boatAmenities.amenityId, amenities.id))
-    .where(eq(boatAmenities.boatId, boat.id));
+  // Run all secondary queries in parallel
+  const [boatAmenitiesList, boatTripTypesList, boatSpeciesList, operatorResult, stateResult] = await Promise.all([
+    // Amenities
+    db.select({ amenity: amenities })
+      .from(boatAmenities)
+      .innerJoin(amenities, eq(boatAmenities.amenityId, amenities.id))
+      .where(eq(boatAmenities.boatId, boat.id)),
 
-  // Get trip types
-  const boatTripTypesList = await db
-    .select({ tripType: tripTypes })
-    .from(boatTripTypes)
-    .innerJoin(tripTypes, eq(boatTripTypes.tripTypeId, tripTypes.id))
-    .where(eq(boatTripTypes.boatId, boat.id));
+    // Trip types
+    db.select({ tripType: tripTypes })
+      .from(boatTripTypes)
+      .innerJoin(tripTypes, eq(boatTripTypes.tripTypeId, tripTypes.id))
+      .where(eq(boatTripTypes.boatId, boat.id)),
 
-  // Get species (table may not exist before migration)
-  let boatSpeciesList: { species: typeof species.$inferSelect }[] = [];
-  try {
-    boatSpeciesList = await db
-      .select({ species })
+    // Species
+    db.select({ species })
       .from(boatSpecies)
       .innerJoin(species, eq(boatSpecies.speciesId, species.id))
-      .where(eq(boatSpecies.boatId, boat.id));
-  } catch {
-    // species table not yet created
-  }
+      .where(eq(boatSpecies.boatId, boat.id))
+      .catch(() => [] as { species: typeof species.$inferSelect }[]),
 
-  // Get operator tier info if operator exists
-  let operatorTier = null;
-  if (boat.operatorId) {
-    const [op] = await db
-      .select({
-        operator: operators,
-        tier: membershipTiers,
-      })
-      .from(operators)
-      .leftJoin(membershipTiers, eq(operators.membershipTierId, membershipTiers.id))
-      .where(eq(operators.id, boat.operatorId));
+    // Operator tier
+    boat.operatorId
+      ? db.select({ operator: operators, tier: membershipTiers })
+          .from(operators)
+          .leftJoin(membershipTiers, eq(operators.membershipTierId, membershipTiers.id))
+          .where(eq(operators.id, boat.operatorId))
+      : Promise.resolve([]),
 
-    if (op?.tier) {
-      operatorTier = op.tier;
-    }
-  }
+    // State slug for breadcrumb links
+    boat.stateCode
+      ? db.select({ slug: states.slug, name: states.name })
+          .from(states)
+          .where(eq(states.code, boat.stateCode))
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
 
-  // Get state slug for breadcrumb links
-  let stateSlug: string | null = null;
-  let stateName: string | null = null;
-  if (boat.stateCode) {
-    const [state] = await db
-      .select({ slug: states.slug, name: states.name })
-      .from(states)
-      .where(eq(states.code, boat.stateCode))
-      .limit(1);
-    stateSlug = state?.slug || null;
-    stateName = state?.name || null;
-  }
+  const operatorTier = operatorResult[0]?.tier || null;
+  const stateSlug = stateResult[0]?.slug || null;
+  const stateName = stateResult[0]?.name || null;
 
   return {
     ...boat,

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -50,10 +51,13 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               {logoUrl ? (
-                <img
+                <Image
                   src={logoUrl}
                   alt="Party Boats USA"
+                  width={300}
+                  height={96}
                   className="h-16 md:h-16 lg:h-24 w-auto"
+                  priority
                 />
               ) : (
                 <>
@@ -128,9 +132,11 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
               className="flex items-center gap-2"
             >
               {logoUrl ? (
-                <img
+                <Image
                   src={logoUrl}
                   alt="Party Boats USA"
+                  width={150}
+                  height={40}
                   className="h-10 w-auto"
                 />
               ) : (

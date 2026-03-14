@@ -31,6 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: `Party Boat Fishing in ${state.name}`,
       description: desc,
+      openGraph: {
+        title: `Party Boat Fishing in ${state.name}`,
+        description: desc,
+        url: `${SITE_URL}/states/${stateSlug}`,
+      },
       twitter: { card: "summary_large_image", description: desc },
       alternates: { canonical: `/states/${stateSlug}` },
     };
@@ -44,6 +49,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: desc,
     openGraph: {
+      title,
+      description: desc,
+      url: `${SITE_URL}/states/${stateSlug}`,
       images: image ? [image] : undefined,
     },
     twitter: {

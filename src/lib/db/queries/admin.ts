@@ -71,6 +71,24 @@ export async function adminUpdateReview(id: number, data: Record<string, unknown
   return r;
 }
 
+export async function syncBoatRatingFromReviews(boatId: number) {
+  const [stats] = await db
+    .select({
+      avg: sql<string>`COALESCE(ROUND(AVG(${reviews.rating})::numeric, 1), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(reviews)
+    .where(and(eq(reviews.boatId, boatId), eq(reviews.status, "approved")));
+
+  await db
+    .update(boats)
+    .set({
+      rating: stats?.avg ?? "0",
+      reviewCount: stats?.count ?? 0,
+    })
+    .where(eq(boats.id, boatId));
+}
+
 export async function adminDeleteReview(id: number) {
   await db.delete(reviews).where(eq(reviews.id, id));
 }

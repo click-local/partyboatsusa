@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminGuard } from "@/lib/auth/admin-guard";
-import { adminUpdateReview, adminDeleteReview } from "@/lib/db/queries/admin";
+import { adminUpdateReview, adminDeleteReview, syncBoatRatingFromReviews } from "@/lib/db/queries/admin";
 import { db } from "@/lib/db";
 import { reviews, boats } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -36,6 +36,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const review = await adminUpdateReview(Number(id), parsed.data);
+
+  // Sync boat rating/review count after status change
+  if (parsed.data.status && reviewData) {
+    syncBoatRatingFromReviews(reviewData.boatId).catch(() => {});
+  }
 
   // Send notification to operator/boat email on approval
   if (isApproving && reviewData) {
@@ -82,6 +87,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { error } = await adminGuard();
   if (error) return error;
   const { id } = await params;
+
+  // Get the review's boatId before deletion so we can sync rating
+  const [r] = await db.select({ boatId: reviews.boatId }).from(reviews).where(eq(reviews.id, Number(id))).limit(1);
   await adminDeleteReview(Number(id));
+  if (r) {
+    syncBoatRatingFromReviews(r.boatId).catch(() => {});
+  }
   return NextResponse.json({ ok: true });
 }
