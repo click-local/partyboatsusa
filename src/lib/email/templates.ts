@@ -160,3 +160,40 @@ ${claimOrManageCta(data.isClaimed, data.boatId)}`;
 
   return emailWrapper(content);
 }
+
+// ---- Boat Submission Notification (Admin) ----
+
+interface BoatSubmissionNotificationData {
+  boatName: string;
+  operatorName: string;
+  operatorEmail: string;
+  cityName: string;
+  stateCode: string;
+  capacity: number;
+  phone: string;
+  websiteUrl: string;
+}
+
+export function buildBoatSubmissionNotificationEmail(
+  data: BoatSubmissionNotificationData
+): string {
+  const content = `
+<h2 style="margin:0 0 8px;font-size:18px;color:#111827;">New Boat Submission</h2>
+<p style="margin:0 0 20px;font-size:13px;color:#6b7280;">An operator has submitted a new boat listing for review on Party Boats USA.</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0;">
+<tr><td style="padding:20px;">
+  <p style="margin:0 0 8px;font-size:15px;font-weight:bold;color:#111827;">${data.boatName}</p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Operator: <strong style="color:#111827;">${data.operatorName}</strong></p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Email: ${data.operatorEmail}</p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Location: ${data.cityName}, ${data.stateCode}</p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Capacity: ${data.capacity} passengers</p>
+  <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Phone: ${data.phone}</p>
+  <p style="margin:0;font-size:13px;color:#6b7280;">Website: <a href="${data.websiteUrl}" style="color:#004685;">${data.websiteUrl}</a></p>
+</td></tr>
+</table>
+
+<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">This listing is pending admin review.</p>`;
+
+  return emailWrapper(content);
+}
