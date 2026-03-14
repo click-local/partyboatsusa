@@ -14,11 +14,11 @@ export default function AdminAddBoatPage() {
   async function handleSave(data: BoatData) {
     setSaving(true);
     try {
-      const { tripTypeIds, amenityIds, ...boatData } = data;
+      const { tripTypeIds, amenityIds, speciesIds, ...boatData } = data;
       const res = await fetch("/api/admin/boats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...boatData, tripTypeIds, amenityIds }),
+        body: JSON.stringify({ ...boatData, tripTypeIds, amenityIds, speciesIds }),
       });
       if (res.ok) {
         toast.success("Boat created");

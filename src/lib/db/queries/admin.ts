@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import {
-  boats, operators, membershipTiers, boatAmenities, boatTripTypes,
-  amenities, tripTypes, states, cities, reviews, bragBoardPhotos,
+  boats, operators, membershipTiers, boatAmenities, boatTripTypes, boatSpecies,
+  amenities, tripTypes, species, states, cities, reviews, bragBoardPhotos,
   boatSubmissions, claimRequests, destinationPages, contentBlocks,
   siteSettings, emailTemplates, featureComparisonItems, featureTierValues,
   operatorContactLogs, pageSeoSettings,
@@ -18,7 +18,7 @@ export async function adminGetBoatById(id: number) {
   return result[0] ?? null;
 }
 
-export async function adminCreateBoat(data: Record<string, unknown>, tripTypeIds?: number[], amenityIds?: number[]) {
+export async function adminCreateBoat(data: Record<string, unknown>, tripTypeIds?: number[], amenityIds?: number[], speciesIds?: number[]) {
   const [boat] = await db.insert(boats).values(data as never).returning();
   if (tripTypeIds?.length) {
     await db.insert(boatTripTypes).values(tripTypeIds.map((tid) => ({ boatId: boat.id, tripTypeId: tid })));
@@ -26,10 +26,13 @@ export async function adminCreateBoat(data: Record<string, unknown>, tripTypeIds
   if (amenityIds?.length) {
     await db.insert(boatAmenities).values(amenityIds.map((aid) => ({ boatId: boat.id, amenityId: aid })));
   }
+  if (speciesIds?.length) {
+    await db.insert(boatSpecies).values(speciesIds.map((sid) => ({ boatId: boat.id, speciesId: sid })));
+  }
   return boat;
 }
 
-export async function adminUpdateBoat(id: number, data: Record<string, unknown>, tripTypeIds?: number[], amenityIds?: number[]) {
+export async function adminUpdateBoat(id: number, data: Record<string, unknown>, tripTypeIds?: number[], amenityIds?: number[], speciesIds?: number[]) {
   const [boat] = await db.update(boats).set(data as never).where(eq(boats.id, id)).returning();
   if (tripTypeIds !== undefined) {
     await db.delete(boatTripTypes).where(eq(boatTripTypes.boatId, id));
@@ -41,6 +44,12 @@ export async function adminUpdateBoat(id: number, data: Record<string, unknown>,
     await db.delete(boatAmenities).where(eq(boatAmenities.boatId, id));
     if (amenityIds.length) {
       await db.insert(boatAmenities).values(amenityIds.map((aid) => ({ boatId: id, amenityId: aid })));
+    }
+  }
+  if (speciesIds !== undefined) {
+    await db.delete(boatSpecies).where(eq(boatSpecies.boatId, id));
+    if (speciesIds.length) {
+      await db.insert(boatSpecies).values(speciesIds.map((sid) => ({ boatId: id, speciesId: sid })));
     }
   }
   return boat;
@@ -156,6 +165,25 @@ export async function adminUpdateTripType(id: number, data: Record<string, unkno
 
 export async function adminDeleteTripType(id: number) {
   await db.delete(tripTypes).where(eq(tripTypes.id, id));
+}
+
+// ===== SPECIES =====
+export async function adminGetSpecies() {
+  return db.select().from(species).orderBy(asc(species.sortOrder));
+}
+
+export async function adminCreateSpecies(data: { name: string; slug: string; sortOrder?: number }) {
+  const [s] = await db.insert(species).values(data).returning();
+  return s;
+}
+
+export async function adminUpdateSpecies(id: number, data: Record<string, unknown>) {
+  const [s] = await db.update(species).set(data as never).where(eq(species.id, id)).returning();
+  return s;
+}
+
+export async function adminDeleteSpecies(id: number) {
+  await db.delete(species).where(eq(species.id, id));
 }
 
 // ===== AMENITIES =====

@@ -16,8 +16,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (error) return error;
   const { id } = await params;
   const body = await req.json();
-  const { tripTypeIds, amenityIds, ...data } = body;
-  const boat = await adminUpdateBoat(Number(id), data, tripTypeIds, amenityIds);
+  const { tripTypeIds, amenityIds, speciesIds, ...data } = body;
+  const boat = await adminUpdateBoat(Number(id), data, tripTypeIds, amenityIds, speciesIds);
   return NextResponse.json(boat);
 }
 

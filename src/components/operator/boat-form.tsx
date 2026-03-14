@@ -7,6 +7,7 @@ import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
 
 interface TripType { id: number; name: string; }
+interface Species { id: number; name: string; }
 interface Amenity { id: number; name: string; icon: string; }
 
 export interface BoatFormData {
@@ -38,6 +39,7 @@ export interface BoatFormData {
   availableExtras: string[];
   tripTypeIds: number[];
   amenityIds: number[];
+  speciesIds: number[];
 }
 
 const DEFAULT_DATA: BoatFormData = {
@@ -69,6 +71,7 @@ const DEFAULT_DATA: BoatFormData = {
   availableExtras: [],
   tripTypeIds: [],
   amenityIds: [],
+  speciesIds: [],
 };
 
 interface BoatFormProps {
@@ -109,19 +112,21 @@ const US_STATES = [
 export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro = false }: BoatFormProps) {
   const [data, setData] = useState<BoatFormData>({ ...DEFAULT_DATA, ...initialData });
   const [saving, setSaving] = useState(false);
-  const [speciesInput, setSpeciesInput] = useState("");
   const [includedInput, setIncludedInput] = useState("");
   const [extrasInput, setExtrasInput] = useState("");
   const [tripTypes, setTripTypes] = useState<TripType[]>([]);
+  const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/operator/trip-types").then((r) => r.json()),
       fetch("/api/operator/amenities").then((r) => r.json()),
-    ]).then(([tt, am]) => {
+      fetch("/api/operator/species").then((r) => r.json()),
+    ]).then(([tt, am, sp]) => {
       setTripTypes(tt);
       setAmenitiesList(am);
+      setSpeciesList(sp);
     });
   }, []);
 
@@ -137,18 +142,6 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
     } finally {
       setSaving(false);
     }
-  }
-
-  function addSpecies() {
-    const val = speciesInput.trim();
-    if (val && !data.targetSpecies.includes(val)) {
-      update("targetSpecies", [...data.targetSpecies, val]);
-    }
-    setSpeciesInput("");
-  }
-
-  function removeSpecies(s: string) {
-    update("targetSpecies", data.targetSpecies.filter((x) => x !== s));
   }
 
   function addIncluded() {
@@ -175,7 +168,7 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
     update("availableExtras", data.availableExtras.filter((x) => x !== s));
   }
 
-  function toggleCheckbox(field: "tripTypeIds" | "amenityIds", id: number) {
+  function toggleCheckbox(field: "tripTypeIds" | "amenityIds" | "speciesIds", id: number) {
     setData((prev) => {
       const arr = prev[field] as number[];
       return { ...prev, [field]: arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id] };
@@ -402,32 +395,15 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
       {/* Target Species */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Target Species</h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={speciesInput}
-            onChange={(e) => setSpeciesInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSpecies())}
-            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder="e.g., Red Snapper"
-          />
-          <button type="button" onClick={addSpecies}
-            className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
-            <Plus className="h-4 w-4" />
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {speciesList.map((sp) => (
+            <label key={sp.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.speciesIds.includes(sp.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
+              <input type="checkbox" checked={data.speciesIds.includes(sp.id)} onChange={() => toggleCheckbox("speciesIds", sp.id)} className="sr-only" />
+              {sp.name}
+            </label>
+          ))}
+          {speciesList.length === 0 && <p className="text-sm text-muted-foreground">No species available yet.</p>}
         </div>
-        {data.targetSpecies.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {data.targetSpecies.map((s) => (
-              <span key={s} className="inline-flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                {s}
-                <button type="button" onClick={() => removeSpecies(s)} className="hover:text-red-500">
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </section>
 
       {/* What's Included */}

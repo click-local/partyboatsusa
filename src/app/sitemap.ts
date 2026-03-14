@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { boats, states, cities, destinationPages, tripTypes, boatTripTypes } from "@/lib/db/schema";
+import { boats, states, cities, destinationPages, tripTypes } from "@/lib/db/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { getAllSpeciesWithBoatCounts } from "@/lib/db/queries/boats";
 

@@ -13,20 +13,23 @@ export default function AdminEditBoatPage() {
   const [boat, setBoat] = useState<Record<string, unknown> | null>(null);
   const [boatTripTypeIds, setBoatTripTypeIds] = useState<number[]>([]);
   const [boatAmenityIds, setBoatAmenityIds] = useState<number[]>([]);
+  const [boatSpeciesIds, setBoatSpeciesIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const [boatRes, ttRes, amRes] = await Promise.all([
+        const [boatRes, ttRes, amRes, spRes] = await Promise.all([
           fetch(`/api/admin/boats/${params.id}`).then((r) => r.json()),
           fetch(`/api/admin/boats/${params.id}/trip-types`).then((r) => r.json()).catch(() => []),
           fetch(`/api/admin/boats/${params.id}/amenities`).then((r) => r.json()).catch(() => []),
+          fetch(`/api/admin/boats/${params.id}/species`).then((r) => r.json()).catch(() => []),
         ]);
         setBoat(boatRes);
         setBoatTripTypeIds(Array.isArray(ttRes) ? ttRes.map((t: { tripTypeId: number }) => t.tripTypeId) : []);
         setBoatAmenityIds(Array.isArray(amRes) ? amRes.map((a: { amenityId: number }) => a.amenityId) : []);
+        setBoatSpeciesIds(Array.isArray(spRes) ? spRes.map((s: { speciesId: number }) => s.speciesId) : []);
       } catch {
         toast.error("Failed to load boat");
       } finally {
@@ -39,11 +42,11 @@ export default function AdminEditBoatPage() {
   async function handleSave(data: BoatData) {
     setSaving(true);
     try {
-      const { tripTypeIds, amenityIds, ...boatData } = data;
+      const { tripTypeIds, amenityIds, speciesIds, ...boatData } = data;
       const res = await fetch(`/api/admin/boats/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...boatData, tripTypeIds, amenityIds }),
+        body: JSON.stringify({ ...boatData, tripTypeIds, amenityIds, speciesIds }),
       });
       if (res.ok) {
         toast.success("Boat updated");
@@ -84,6 +87,7 @@ export default function AdminEditBoatPage() {
     availableExtras: Array.isArray(boat.availableExtras) ? boat.availableExtras : [],
     tripTypeIds: boatTripTypeIds,
     amenityIds: boatAmenityIds,
+    speciesIds: boatSpeciesIds,
   };
 
   return (

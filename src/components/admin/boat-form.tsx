@@ -44,9 +44,11 @@ export interface BoatData {
   seoKeywords: string;
   tripTypeIds: number[];
   amenityIds: number[];
+  speciesIds: number[];
 }
 
 interface TripType { id: number; name: string; }
+interface Species { id: number; name: string; }
 interface Amenity { id: number; name: string; icon: string; }
 interface State { id: number; name: string; code: string; }
 
@@ -61,7 +63,7 @@ const emptyBoat: BoatData = {
   primaryImageUrl: "", imageFocalPointX: 50, imageFocalPointY: 50,
   galleryImageUrls: [], targetSpecies: [], whatsIncluded: [], availableExtras: [],
   seoTitle: "", seoDescription: "", seoKeywords: "",
-  tripTypeIds: [], amenityIds: [],
+  tripTypeIds: [], amenityIds: [], speciesIds: [],
 };
 
 function mergeWithDefaults(defaults: BoatData, overrides?: Partial<BoatData>): BoatData {
@@ -83,10 +85,10 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
 }) {
   const [data, setData] = useState<BoatData>(mergeWithDefaults(emptyBoat, initialData));
   const [tripTypes, setTripTypes] = useState<TripType[]>([]);
+  const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
-  const [newSpecies, setNewSpecies] = useState("");
   const [newIncluded, setNewIncluded] = useState("");
   const [newExtra, setNewExtra] = useState("");
 
@@ -94,9 +96,11 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
     Promise.all([
       fetch("/api/admin/trip-types").then((r) => r.json()),
       fetch("/api/admin/amenities").then((r) => r.json()),
-    ]).then(([tt, am]) => {
+      fetch("/api/admin/species").then((r) => r.json()),
+    ]).then(([tt, am, sp]) => {
       setTripTypes(tt);
       setAmenitiesList(am);
+      setSpeciesList(sp);
     });
   }, []);
 
@@ -121,7 +125,7 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
     setData((prev) => ({ ...prev, [field]: (prev[field] as string[]).filter((_, i) => i !== index) }));
   }
 
-  function toggleCheckbox(field: "tripTypeIds" | "amenityIds", id: number) {
+  function toggleCheckbox(field: "tripTypeIds" | "amenityIds" | "speciesIds", id: number) {
     setData((prev) => {
       const arr = prev[field] as number[];
       return { ...prev, [field]: arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id] };
@@ -347,17 +351,15 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
       <section className="bg-white rounded-xl border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Fishing Details</h2>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Target Species</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {data.targetSpecies.map((s, i) => (
-              <span key={i} className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                {s} <button type="button" onClick={() => removeArrayItem("targetSpecies", i)} className="text-blue-500 hover:text-blue-700"><X className="h-3 w-3" /></button>
-              </span>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Target Species</label>
+          <div className="flex flex-wrap gap-2">
+            {speciesList.map((sp) => (
+              <label key={sp.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer ${data.speciesIds.includes(sp.id) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200"}`}>
+                <input type="checkbox" checked={data.speciesIds.includes(sp.id)} onChange={() => toggleCheckbox("speciesIds", sp.id)} className="sr-only" />
+                {sp.name}
+              </label>
             ))}
-          </div>
-          <div className="flex gap-2">
-            <input value={newSpecies} onChange={(e) => setNewSpecies(e.target.value)} placeholder="Add species..." className="flex-1 border rounded-lg px-3 py-2 text-sm" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addArrayItem("targetSpecies", newSpecies, setNewSpecies); }}} />
-            <button type="button" onClick={() => addArrayItem("targetSpecies", newSpecies, setNewSpecies)} className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"><Plus className="h-4 w-4" /></button>
+            {speciesList.length === 0 && <p className="text-sm text-gray-400">No species configured yet. Add them in Options.</p>}
           </div>
         </div>
         <div>

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, amenities, tripTypes, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -163,6 +163,18 @@ export async function getBoatBySlug(slug: string) {
     .innerJoin(tripTypes, eq(boatTripTypes.tripTypeId, tripTypes.id))
     .where(eq(boatTripTypes.boatId, boat.id));
 
+  // Get species (table may not exist before migration)
+  let boatSpeciesList: { species: typeof species.$inferSelect }[] = [];
+  try {
+    boatSpeciesList = await db
+      .select({ species })
+      .from(boatSpecies)
+      .innerJoin(species, eq(boatSpecies.speciesId, species.id))
+      .where(eq(boatSpecies.boatId, boat.id));
+  } catch {
+    // species table not yet created
+  }
+
   // Get operator tier info if operator exists
   let operatorTier = null;
   if (boat.operatorId) {
@@ -197,6 +209,7 @@ export async function getBoatBySlug(slug: string) {
     ...boat,
     amenities: boatAmenitiesList.map((ba) => ba.amenity),
     tripTypes: boatTripTypesList.map((bt) => bt.tripType),
+    species: boatSpeciesList.map((bs) => bs.species),
     operatorTier,
     stateSlug,
     stateName,
@@ -346,52 +359,53 @@ export async function getBoatsByTripType(tripTypeSlug: string, page = 1, limit =
 }
 
 export async function getAllSpeciesWithBoatCounts() {
-  const results = await db
-    .select({
-      species: sql<string>`unnest(${boats.targetSpecies})`.as("species"),
-    })
-    .from(boats)
-    .where(eq(boats.isPublished, true));
-
-  const counts = new Map<string, number>();
-  for (const row of results) {
-    const s = row.species.trim();
-    if (s) counts.set(s, (counts.get(s) || 0) + 1);
+  try {
+    return await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        sortOrder: species.sortOrder,
+        boatCount: sql<number>`count(${boatSpecies.boatId})`.as("boat_count"),
+      })
+      .from(species)
+      .leftJoin(boatSpecies, eq(boatSpecies.speciesId, species.id))
+      .leftJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
+      .groupBy(species.id, species.name, species.slug, species.sortOrder)
+      .orderBy(species.sortOrder);
+  } catch {
+    // Table may not exist yet before migration
+    return [];
   }
-
-  return [...counts.entries()]
-    .map(([name, boatCount]) => ({
-      name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-      boatCount,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 50) {
   const offset = (page - 1) * limit;
 
-  // First find the actual species name from boats that match this slug
-  const allSpecies = await getAllSpeciesWithBoatCounts();
-  const match = allSpecies.find((s) => s.slug === speciesSlug);
-  if (!match) return null;
+  try {
+    const [sp] = await db.select().from(species).where(eq(species.slug, speciesSlug)).limit(1);
+    if (!sp) return null;
 
-  const where = and(
-    eq(boats.isPublished, true),
-    sql`${boats.targetSpecies} @> ARRAY[${match.name}]::text[]`
-  );
+    const where = and(
+      eq(boats.isPublished, true),
+      sql`${boats.id} IN (SELECT boat_id FROM boat_species WHERE species_id = ${sp.id})`
+    );
 
-  const [results, countResult] = await Promise.all([
-    db.select().from(boats).where(where).orderBy(desc(boats.rating)).limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(boats).where(where),
-  ]);
+    const [results, countResult] = await Promise.all([
+      db.select().from(boats).where(where).orderBy(desc(boats.rating)).limit(limit).offset(offset),
+      db.select({ count: sql<number>`count(*)` }).from(boats).where(where),
+    ]);
 
-  return {
-    speciesName: match.name,
-    speciesSlug: match.slug,
-    boats: results,
-    total: Number(countResult[0]?.count ?? 0),
-    page,
-    totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
-  };
+    return {
+      speciesName: sp.name,
+      speciesSlug: sp.slug,
+      boats: results,
+      total: Number(countResult[0]?.count ?? 0),
+      page,
+      totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
+    };
+  } catch {
+    // Table may not exist yet before migration
+    return null;
+  }
 }

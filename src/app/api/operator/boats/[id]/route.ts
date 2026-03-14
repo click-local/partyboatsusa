@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOperator } from "@/lib/auth/get-operator";
 import { db } from "@/lib/db";
-import { boats } from "@/lib/db/schema";
+import { boats, boatTripTypes, boatAmenities, boatSpecies } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function GET(
@@ -29,7 +29,19 @@ export async function GET(
     return NextResponse.json({ error: "Boat not found" }, { status: 404 });
   }
 
-  return NextResponse.json(result[0]);
+  // Include join table IDs for form pre-population
+  const [ttRows, amRows, spRows] = await Promise.all([
+    db.select({ tripTypeId: boatTripTypes.tripTypeId }).from(boatTripTypes).where(eq(boatTripTypes.boatId, boatId)),
+    db.select({ amenityId: boatAmenities.amenityId }).from(boatAmenities).where(eq(boatAmenities.boatId, boatId)),
+    db.select({ speciesId: boatSpecies.speciesId }).from(boatSpecies).where(eq(boatSpecies.boatId, boatId)),
+  ]);
+
+  return NextResponse.json({
+    ...result[0],
+    tripTypeIds: ttRows.map((r) => r.tripTypeId),
+    amenityIds: amRows.map((r) => r.amenityId),
+    speciesIds: spRows.map((r) => r.speciesId),
+  });
 }
 
 export async function PUT(
@@ -82,15 +94,43 @@ export async function PUT(
     }
   }
 
-  if (Object.keys(allowedFields).length === 0) {
+  // Handle join table fields separately
+  const { tripTypeIds, amenityIds, speciesIds } = body;
+
+  if (Object.keys(allowedFields).length === 0 && tripTypeIds === undefined && amenityIds === undefined && speciesIds === undefined) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
-  const [updated] = await db
-    .update(boats)
-    .set(allowedFields)
-    .where(eq(boats.id, boatId))
-    .returning();
+  let updated;
+  if (Object.keys(allowedFields).length > 0) {
+    [updated] = await db
+      .update(boats)
+      .set(allowedFields)
+      .where(eq(boats.id, boatId))
+      .returning();
+  } else {
+    [updated] = await db.select().from(boats).where(eq(boats.id, boatId));
+  }
+
+  // Update join tables
+  if (Array.isArray(tripTypeIds)) {
+    await db.delete(boatTripTypes).where(eq(boatTripTypes.boatId, boatId));
+    if (tripTypeIds.length) {
+      await db.insert(boatTripTypes).values(tripTypeIds.map((tid: number) => ({ boatId, tripTypeId: tid })));
+    }
+  }
+  if (Array.isArray(amenityIds)) {
+    await db.delete(boatAmenities).where(eq(boatAmenities.boatId, boatId));
+    if (amenityIds.length) {
+      await db.insert(boatAmenities).values(amenityIds.map((aid: number) => ({ boatId, amenityId: aid })));
+    }
+  }
+  if (Array.isArray(speciesIds)) {
+    await db.delete(boatSpecies).where(eq(boatSpecies.boatId, boatId));
+    if (speciesIds.length) {
+      await db.insert(boatSpecies).values(speciesIds.map((sid: number) => ({ boatId, speciesId: sid })));
+    }
+  }
 
   return NextResponse.json(updated);
 }

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const { error } = await adminGuard();
   if (error) return error;
   const body = await req.json();
-  const { tripTypeIds, amenityIds, ...data } = body;
-  const boat = await adminCreateBoat(data, tripTypeIds, amenityIds);
+  const { tripTypeIds, amenityIds, speciesIds, ...data } = body;
+  const boat = await adminCreateBoat(data, tripTypeIds, amenityIds, speciesIds);
   return NextResponse.json(boat, { status: 201 });
 }

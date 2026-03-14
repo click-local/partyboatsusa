@@ -345,15 +345,15 @@ export default async function BoatDetailPage({ params }: Props) {
             )}
 
             {/* Target Species */}
-            {boat.targetSpecies.length > 0 && (
+            {boat.species && boat.species.length > 0 && (
               <div>
                 <h2 className="text-2xl font-display font-bold mb-4">Target Species</h2>
                 <div className="flex flex-wrap gap-2">
-                  {boat.targetSpecies.map((species) => (
-                    <div key={species} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-gray-50/50 hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                  {boat.species.map((sp) => (
+                    <Link key={sp.id} href={`/species/${sp.slug}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-gray-50/50 hover:border-primary/30 hover:bg-primary/5 transition-colors">
                       <Fish className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm">{species}</span>
-                    </div>
+                      <span className="font-medium text-sm">{sp.name}</span>
+                    </Link>
                   ))}
                 </div>
               </div>
