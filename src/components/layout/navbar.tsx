@@ -91,7 +91,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 rounded-md text-muted-foreground hover:text-primary"
+              className="lg:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-primary"
               aria-label="Open menu"
             >
               <Menu className="h-6 w-6" />
@@ -144,7 +144,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
             </Link>
             <button
               onClick={() => setMobileOpen(false)}
-              className="p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Close menu"
             >
               <X className="h-6 w-6" />

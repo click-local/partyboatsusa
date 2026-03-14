@@ -43,7 +43,7 @@ export default async function DestinationsPage() {
       {/* Hero */}
       <section className="bg-primary text-white py-10">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-3">
+          <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
             Browse Destinations
           </h1>
           <p className="text-blue-100 max-w-2xl mx-auto mb-6">

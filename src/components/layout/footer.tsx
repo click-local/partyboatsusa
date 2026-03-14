@@ -62,7 +62,7 @@ export function Footer() {
           <a
             href="https://GoFishVIP.com"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
           >
             <Image
               src="/images/gofish-footer.png"

@@ -179,7 +179,7 @@ export default async function BoatDetailPage({ params }: Props) {
       <div className="relative h-64 md:h-96 bg-muted">
         <Image
           src={heroImage}
-          alt={boat.name}
+          alt={`${boat.name} - Party boat fishing in ${boat.cityName}, ${boat.stateName || boat.stateCode}`}
           fill
           className="object-cover"
           priority
@@ -583,7 +583,7 @@ export default async function BoatDetailPage({ params }: Props) {
                   <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
                     <Image
                       src={formatImageUrl(url)}
-                      alt={`${boat.name} photo ${i + 1}`}
+                      alt={`${boat.name} fishing charter in ${boat.cityName} - photo ${i + 1}`}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 50vw, 33vw"

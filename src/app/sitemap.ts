@@ -80,11 +80,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let cityPages: MetadataRoute.Sitemap = [];
   try {
     const allCities = await db.select({ slug: cities.slug }).from(cities);
+
+    const latestCityDestUpdate = await db
+      .select({ updatedAt: destinationPages.updatedAt })
+      .from(destinationPages)
+      .where(eq(destinationPages.type, "city"))
+      .orderBy(desc(destinationPages.updatedAt))
+      .limit(1);
+
+    const cityLastMod = latestCityDestUpdate[0]?.updatedAt || now;
+
     cityPages = allCities.map((city) => ({
       url: `${SITE_URL}/locations/${city.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.6,
-      lastModified: new Date("2025-01-01"),
+      lastModified: cityLastMod,
     }));
   } catch {
     // DB not connected yet

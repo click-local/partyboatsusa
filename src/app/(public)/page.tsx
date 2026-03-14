@@ -113,7 +113,7 @@ export default async function Home() {
       {/* Featured Captains & Boats */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-display font-bold text-center mb-4">
+          <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-4">
             Featured Captains &amp; Boats
           </h2>
           <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
@@ -202,7 +202,7 @@ export default async function Home() {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h2 className="text-3xl font-display font-bold">Latest Catches</h2>
+                <h2 className="text-2xl md:text-3xl font-display font-bold">Latest Catches</h2>
                 <p className="text-muted-foreground mt-1">
                   See what anglers are reeling in on party boats across the country
                 </p>
@@ -254,7 +254,7 @@ export default async function Home() {
       {destPages.length > 0 && (
         <section className="py-12 bg-gray-50">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-display font-bold text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-8">
               Explore Fishing Destinations
             </h2>
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">

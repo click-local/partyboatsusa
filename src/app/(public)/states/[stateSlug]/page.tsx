@@ -243,6 +243,27 @@ export default async function StatePage({ params, searchParams }: Props) {
           }),
         }}
       />
+
+      {/* ItemList JSON-LD for boat listings */}
+      {boatData.boats.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: `Party Boats in ${state.name}`,
+              numberOfItems: boatData.total,
+              itemListElement: boatData.boats.map((boat, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `${SITE_URL}/boats/${boat.slug}`,
+                name: boat.name,
+              })),
+            }),
+          }}
+        />
+      )}
     </>
   );
 }

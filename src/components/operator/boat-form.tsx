@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
 
@@ -339,7 +340,7 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {data.galleryImageUrls.map((url, i) => (
                 <div key={i} className="relative h-32 rounded-lg overflow-hidden border border-border">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <Image src={url} alt={`Gallery image ${i + 1}`} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                   <button
                     type="button"
                     onClick={() => removeGalleryImage(i)}

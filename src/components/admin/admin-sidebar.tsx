@@ -77,7 +77,7 @@ export function AdminSidebar() {
       </aside>
       <div className="lg:hidden sticky top-0 z-50 bg-gray-900 px-4 h-14 flex items-center justify-between">
         <span className="font-display font-bold text-white text-sm">PBUSA Admin</span>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-gray-300">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300">
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>

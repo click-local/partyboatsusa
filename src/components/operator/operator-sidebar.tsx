@@ -98,24 +98,30 @@ export function OperatorSidebar() {
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-md text-muted-foreground hover:text-primary"
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-primary"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {/* Mobile Menu Overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 top-14">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="relative bg-white w-60 min-h-full flex flex-col shadow-xl">
-            {navContent}
-          </div>
+      <div
+        className={`lg:hidden fixed inset-0 z-40 top-14 transition-opacity duration-200 ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-black/30"
+          onClick={() => setMobileOpen(false)}
+        />
+        <div
+          className={`relative bg-white w-60 min-h-full flex flex-col shadow-xl transition-transform duration-200 ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {navContent}
         </div>
-      )}
+      </div>
     </>
   );
 }

@@ -212,7 +212,7 @@ function SearchPageContent() {
       {/* Search Header */}
       <div className="bg-primary text-white py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-display font-bold mb-4 text-center">
+          <h1 className="text-2xl md:text-3xl font-display font-bold mb-4 text-center">
             Browse Party Boats
           </h1>
           <div className="flex justify-center">
@@ -252,7 +252,7 @@ function SearchPageContent() {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
               <div className="flex items-center gap-2">
                 {/* Mobile filter button */}
                 <Sheet>

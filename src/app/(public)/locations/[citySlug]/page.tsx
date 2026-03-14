@@ -9,7 +9,7 @@ import { ContentBlockRenderer } from "@/components/content-blocks";
 import { formatImageUrl } from "@/lib/utils";
 import { getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { db } from "@/lib/db";
-import { boats } from "@/lib/db/schema";
+import { boats, states } from "@/lib/db/schema";
 import { eq, and, ilike, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 
@@ -61,14 +61,22 @@ export default async function CityPage({ params }: Props) {
   const city = await getCityBySlug(citySlug);
   if (!city) notFound();
 
-  const [destPage, cityBoats] = await Promise.all([
+  const [destPage, cityBoats, stateInfo] = await Promise.all([
     getDestinationPageByCitySlug(citySlug),
     db
       .select()
       .from(boats)
       .where(and(eq(boats.isPublished, true), ilike(boats.cityName, city.name)))
       .orderBy(desc(boats.rating)),
+    db
+      .select({ slug: states.slug, name: states.name })
+      .from(states)
+      .where(eq(states.code, city.stateCode))
+      .limit(1),
   ]);
+
+  const stateSlug = stateInfo[0]?.slug || city.stateCode.toLowerCase();
+  const stateName = stateInfo[0]?.name || city.stateCode;
 
   const tierBadges = await getTierBadgesForBoats(cityBoats.map((b) => b.operatorId));
 
@@ -84,8 +92,8 @@ export default async function CityPage({ params }: Props) {
             <ChevronRight className="h-3 w-3" />
             <Link href="/destinations" className="hover:text-primary">Destinations</Link>
             <ChevronRight className="h-3 w-3" />
-            <Link href={`/states/${city.stateCode.toLowerCase()}`} className="hover:text-primary">
-              {city.stateCode}
+            <Link href={`/states/${stateSlug}`} className="hover:text-primary">
+              {stateName}
             </Link>
             <ChevronRight className="h-3 w-3" />
             <span className="text-foreground font-medium">{city.name}</span>
@@ -169,12 +177,33 @@ export default async function CityPage({ params }: Props) {
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
               { "@type": "ListItem", position: 2, name: "Destinations", item: `${SITE_URL}/destinations` },
-              { "@type": "ListItem", position: 3, name: city.stateCode, item: `${SITE_URL}/states/${city.stateCode.toLowerCase()}` },
+              { "@type": "ListItem", position: 3, name: stateName, item: `${SITE_URL}/states/${stateSlug}` },
               { "@type": "ListItem", position: 4, name: city.name, item: `${SITE_URL}/locations/${citySlug}` },
             ],
           }),
         }}
       />
+
+      {/* ItemList JSON-LD for boat listings */}
+      {cityBoats.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: `Party Boats in ${city.name}, ${stateName}`,
+              numberOfItems: cityBoats.length,
+              itemListElement: cityBoats.map((boat, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `${SITE_URL}/boats/${boat.slug}`,
+                name: boat.name,
+              })),
+            }),
+          }}
+        />
+      )}
     </>
   );
 }

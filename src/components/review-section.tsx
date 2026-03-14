@@ -168,7 +168,7 @@ export function ReviewSection({
                   placeholder="Tell us about your trip..."
                 />
               </div>
-              <div className="w-48">
+              <div className="w-full sm:w-48">
                 <label className="text-sm font-medium mb-1 block">Trip Date (optional)</label>
                 <Input
                   type="date"
