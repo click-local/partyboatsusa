@@ -262,6 +262,55 @@ export async function getNearbyBoats(boatId: number, lat: string, lng: string, l
     .limit(limit);
 }
 
+export async function getNearbyBoatsBySpecies(
+  speciesId: number,
+  lat: number,
+  lng: number,
+  stateCode?: string,
+  limit = 5
+) {
+  const distanceSql = sql`3959 * acos(
+    cos(radians(${lat})) * cos(radians(${boats.latitude}::float))
+    * cos(radians(${boats.longitude}::float) - radians(${lng}))
+    + sin(radians(${lat})) * sin(radians(${boats.latitude}::float))
+  )`;
+
+  const conditions = [
+    eq(boats.isPublished, true),
+    sql`${boats.latitude} IS NOT NULL`,
+    sql`${boats.longitude} IS NOT NULL`,
+    sql`${boats.id} IN (SELECT boat_id FROM boat_species WHERE species_id = ${speciesId})`,
+  ];
+  if (stateCode) conditions.push(eq(boats.stateCode, stateCode));
+
+  return db
+    .select({
+      id: boats.id,
+      name: boats.name,
+      slug: boats.slug,
+      operatorName: boats.operatorName,
+      operatorId: boats.operatorId,
+      cityName: boats.cityName,
+      stateCode: boats.stateCode,
+      latitude: boats.latitude,
+      longitude: boats.longitude,
+      primaryImageUrl: boats.primaryImageUrl,
+      imageFocalPointX: boats.imageFocalPointX,
+      imageFocalPointY: boats.imageFocalPointY,
+      rating: boats.rating,
+      reviewCount: boats.reviewCount,
+      capacity: boats.capacity,
+      minPricePerPerson: boats.minPricePerPerson,
+      isFeatured: boats.isFeatured,
+      isFeaturedAdmin: boats.isFeaturedAdmin,
+      distanceMiles: sql<number>`round(${distanceSql}::numeric, 1)`.as("distance_miles"),
+    })
+    .from(boats)
+    .where(and(...conditions))
+    .orderBy(distanceSql)
+    .limit(limit);
+}
+
 export async function getFleetBoats(operatorId: number, excludeBoatId: number) {
   return db
     .select()

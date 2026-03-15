@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Fish, MapPin, Tag, Ruler, Waves, Zap, UtensilsCrossed } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
+import { SpeciesBoatExplorer } from "@/components/species-boat-explorer";
 import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
 
@@ -50,6 +51,42 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
     getStatesForSpecies(slug),
   ]);
 
+  // Prepare data for the explorer component
+  const allBoatMarkers = data.boats
+    .filter((b) => b.latitude && b.longitude)
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+      latitude: Number(b.latitude),
+      longitude: Number(b.longitude),
+      cityName: b.cityName,
+    }));
+
+  const fallbackBoats = data.boats.slice(0, 5).map((b) => ({
+    id: b.id,
+    name: b.name,
+    slug: b.slug,
+    operatorName: b.operatorName,
+    operatorId: b.operatorId,
+    cityName: b.cityName,
+    stateCode: b.stateCode,
+    latitude: b.latitude,
+    longitude: b.longitude,
+    primaryImageUrl: b.primaryImageUrl,
+    imageFocalPointX: b.imageFocalPointX,
+    imageFocalPointY: b.imageFocalPointY,
+    rating: b.rating,
+    reviewCount: b.reviewCount,
+    capacity: b.capacity,
+    minPricePerPerson: b.minPricePerPerson,
+    isFeatured: b.isFeatured,
+    isFeaturedAdmin: b.isFeaturedAdmin,
+  }));
+
+  const tierBadgesObj: Record<number, { name: string; color: string }> = {};
+  tierBadges.forEach((v, k) => { tierBadgesObj[k] = v; });
+
   return (
     <>
       {/* Breadcrumbs */}
@@ -71,123 +108,160 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="bg-primary text-white py-10">
+      {/* Compact Hero */}
+      <section className="bg-primary text-white py-6">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-4">
             {sp.imageUrl && (
-              <div className="mb-5 inline-block">
-                <div className="bg-white/10 backdrop-blur rounded-xl p-3 inline-block">
-                  <Image
-                    src={sp.imageUrl}
-                    alt={sp.name}
-                    width={200}
-                    height={120}
-                    className="h-24 md:h-32 w-auto object-contain drop-shadow-lg"
-                  />
-                </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-2 shrink-0">
+                <Image
+                  src={sp.imageUrl}
+                  alt={sp.name}
+                  width={120}
+                  height={72}
+                  className="h-14 md:h-20 w-auto object-contain drop-shadow-lg"
+                />
               </div>
             )}
-            <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
-              {sp.name} Fishing Charters
-            </h1>
-            {sp.scientificName && (
-              <p className="text-blue-200 italic text-sm mb-3">{sp.scientificName}</p>
-            )}
-            <p className="text-blue-100 max-w-2xl mx-auto">
-              Browse {data.total} party boat charters targeting {sp.name} across the United States.
-            </p>
+            <div className="text-center md:text-left">
+              <h1 className="text-xl md:text-3xl font-display font-bold">
+                {sp.name} Fishing Charters
+              </h1>
+              {sp.scientificName && (
+                <p className="text-blue-200 italic text-sm">{sp.scientificName}</p>
+              )}
+              <p className="text-blue-100 text-sm mt-1">
+                {data.total} party boat charter{data.total !== 1 ? "s" : ""} across the United States
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Species Info Section */}
-      <section className="bg-white border-b">
-        <div className="container mx-auto px-4 py-10">
-          <div className="max-w-4xl mx-auto">
-            {/* Quick Facts + Intro Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Main Content */}
-              <div className="md:col-span-2 space-y-4">
-                {sp.description && (
-                  <p className="text-lg text-muted-foreground leading-relaxed">{sp.description}</p>
-                )}
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {sp.categoryName && sp.categorySlug && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Fish className="h-4 w-4" />
-                      <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
-                    </div>
+      {/* Boat Explorer - Map + Nearest Boats (THE FOCUS) */}
+      <SpeciesBoatExplorer
+        speciesId={sp.id}
+        speciesName={sp.name}
+        speciesSlug={slug}
+        allBoatMarkers={allBoatMarkers}
+        fallbackBoats={fallbackBoats}
+        tierBadges={tierBadgesObj}
+        totalCount={data.total}
+      />
+
+      {/* Browse by State */}
+      {statesList.length > 0 && (
+        <section className="bg-gray-50 border-b">
+          <div className="container mx-auto px-4 py-8">
+            <h2 className="text-lg font-display font-bold mb-3">
+              {sp.name} Fishing by State
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {statesList.map((s) => (
+                <Link
+                  key={s.stateSlug}
+                  href={`/species/${slug}/${s.stateSlug}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {s.stateName}
+                  <span className="text-muted-foreground">({s.boatCount})</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* About This Species - SEO Content */}
+      {(sp.description || sp.descriptionLong || sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
+        <section className="bg-white border-b">
+          <div className="container mx-auto px-4 py-10">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-xl font-display font-bold mb-6">About {sp.name}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Main Content */}
+                <div className="md:col-span-2 space-y-4">
+                  {sp.description && (
+                    <p className="text-lg text-muted-foreground leading-relaxed">{sp.description}</p>
                   )}
-                  {aliases.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Tag className="h-4 w-4" />
-                      <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    {sp.categoryName && sp.categorySlug && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Fish className="h-4 w-4" />
+                        <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
+                      </div>
+                    )}
+                    {aliases.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Tag className="h-4 w-4" />
+                        <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Quick Facts Sidebar */}
+                {(sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
+                  <div className="bg-gray-50 rounded-xl border p-5 space-y-3">
+                    <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Quick Facts</h3>
+                    {sp.sizeRange && (
+                      <div className="flex items-start gap-2.5">
+                        <Ruler className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500">Size Range</p>
+                          <p className="text-sm font-medium">{sp.sizeRange}</p>
+                        </div>
+                      </div>
+                    )}
+                    {sp.habitat && (
+                      <div className="flex items-start gap-2.5">
+                        <Waves className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500">Habitat</p>
+                          <p className="text-sm font-medium">{sp.habitat}</p>
+                        </div>
+                      </div>
+                    )}
+                    {sp.fightRating && (
+                      <div className="flex items-start gap-2.5">
+                        <Zap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500">Fight</p>
+                          <p className="text-sm font-medium">{sp.fightRating}</p>
+                        </div>
+                      </div>
+                    )}
+                    {sp.edibility && (
+                      <div className="flex items-start gap-2.5">
+                        <UtensilsCrossed className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500">Table Fare</p>
+                          <p className="text-sm font-medium">{sp.edibility}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Quick Facts Sidebar */}
-              {(sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
-                <div className="bg-gray-50 rounded-xl border p-5 space-y-3">
-                  <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Quick Facts</h3>
-                  {sp.sizeRange && (
-                    <div className="flex items-start gap-2.5">
-                      <Ruler className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">Size Range</p>
-                        <p className="text-sm font-medium">{sp.sizeRange}</p>
-                      </div>
-                    </div>
-                  )}
-                  {sp.habitat && (
-                    <div className="flex items-start gap-2.5">
-                      <Waves className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">Habitat</p>
-                        <p className="text-sm font-medium">{sp.habitat}</p>
-                      </div>
-                    </div>
-                  )}
-                  {sp.fightRating && (
-                    <div className="flex items-start gap-2.5">
-                      <Zap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">Fight</p>
-                        <p className="text-sm font-medium">{sp.fightRating}</p>
-                      </div>
-                    </div>
-                  )}
-                  {sp.edibility && (
-                    <div className="flex items-start gap-2.5">
-                      <UtensilsCrossed className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">Table Fare</p>
-                        <p className="text-sm font-medium">{sp.edibility}</p>
-                      </div>
-                    </div>
-                  )}
+              {/* Long Description */}
+              {sp.descriptionLong && (
+                <div className="mt-8 prose prose-sm max-w-none text-foreground">
+                  {sp.descriptionLong.split("\n\n").map((paragraph, i) => (
+                    <p key={i} className="text-muted-foreground leading-relaxed mb-4">{paragraph}</p>
+                  ))}
                 </div>
               )}
             </div>
-
-            {/* Long Description */}
-            {sp.descriptionLong && (
-              <div className="mt-8 prose prose-sm max-w-none text-foreground">
-                {sp.descriptionLong.split("\n\n").map((paragraph, i) => (
-                  <p key={i} className="text-muted-foreground leading-relaxed mb-4">{paragraph}</p>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Boat Grid */}
-      <div className="container mx-auto px-4 py-12">
+      {/* All Boats Grid */}
+      <div id="all-boats" className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-display font-bold mb-6">
-          Boats Targeting {sp.name}
+          All {sp.name} Charters
           <span className="text-muted-foreground font-normal text-lg ml-2">
             ({data.total})
           </span>
@@ -235,30 +309,6 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
           </div>
         )}
       </div>
-
-      {/* Browse by State */}
-      {statesList.length > 0 && (
-        <section className="bg-gray-50 border-t">
-          <div className="container mx-auto px-4 py-10">
-            <h2 className="text-xl font-display font-bold mb-4">
-              {sp.name} Fishing by State
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {statesList.map((s) => (
-                <Link
-                  key={s.stateSlug}
-                  href={`/species/${slug}/${s.stateSlug}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {s.stateName}
-                  <span className="text-muted-foreground">({s.boatCount})</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* BreadcrumbList JSON-LD */}
       <script

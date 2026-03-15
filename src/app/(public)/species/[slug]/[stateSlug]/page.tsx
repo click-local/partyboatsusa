@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Fish, MapPin, Tag, Calendar, Anchor } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
+import { SpeciesBoatExplorer } from "@/components/species-boat-explorer";
 import { getBoatsBySpeciesAndState, getAllSpeciesStateCombinations, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
 
@@ -57,6 +58,42 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
   const { species: sp, state: st, stateContent, aliases, otherStates } = data;
   const tierBadges = await getTierBadgesForBoats(data.boats.map((b) => b.operatorId));
 
+  // Prepare data for the explorer component
+  const allBoatMarkers = data.boats
+    .filter((b) => b.latitude && b.longitude)
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+      latitude: Number(b.latitude),
+      longitude: Number(b.longitude),
+      cityName: b.cityName,
+    }));
+
+  const fallbackBoats = data.boats.slice(0, 5).map((b) => ({
+    id: b.id,
+    name: b.name,
+    slug: b.slug,
+    operatorName: b.operatorName,
+    operatorId: b.operatorId,
+    cityName: b.cityName,
+    stateCode: b.stateCode,
+    latitude: b.latitude,
+    longitude: b.longitude,
+    primaryImageUrl: b.primaryImageUrl,
+    imageFocalPointX: b.imageFocalPointX,
+    imageFocalPointY: b.imageFocalPointY,
+    rating: b.rating,
+    reviewCount: b.reviewCount,
+    capacity: b.capacity,
+    minPricePerPerson: b.minPricePerPerson,
+    isFeatured: b.isFeatured,
+    isFeaturedAdmin: b.isFeaturedAdmin,
+  }));
+
+  const tierBadgesObj: Record<number, { name: string; color: string }> = {};
+  tierBadges.forEach((v, k) => { tierBadgesObj[k] = v; });
+
   return (
     <>
       {/* Breadcrumbs */}
@@ -80,88 +117,133 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="bg-primary text-white py-10">
+      {/* Compact Hero */}
+      <section className="bg-primary text-white py-6">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-4">
             {sp.imageUrl && (
-              <div className="mb-5 inline-block">
-                <div className="bg-white/10 backdrop-blur rounded-xl p-3 inline-block">
-                  <Image
-                    src={sp.imageUrl}
-                    alt={sp.name}
-                    width={200}
-                    height={120}
-                    className="h-24 md:h-32 w-auto object-contain drop-shadow-lg"
-                  />
-                </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-2 shrink-0">
+                <Image
+                  src={sp.imageUrl}
+                  alt={sp.name}
+                  width={120}
+                  height={72}
+                  className="h-14 md:h-20 w-auto object-contain drop-shadow-lg"
+                />
               </div>
             )}
-            <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
-              {sp.name} Fishing in {st.name}
-            </h1>
-            {sp.scientificName && (
-              <p className="text-blue-200 italic text-sm mb-3">{sp.scientificName}</p>
-            )}
-            <p className="text-blue-100 max-w-2xl mx-auto">
-              Browse {data.total} party boat charter{data.total !== 1 ? "s" : ""} targeting {sp.name} in {st.name}.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* State-Specific Info Section */}
-      <section className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-3xl mx-auto space-y-4">
-            {stateContent?.content ? (
-              <p className="text-muted-foreground leading-relaxed">{stateContent.content}</p>
-            ) : sp.description ? (
-              <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
-            ) : null}
-
-            {/* Quick info pills */}
-            <div className="flex flex-wrap gap-3">
-              {stateContent?.bestSeason && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                  <span className="text-blue-800 font-medium">{stateContent.bestSeason}</span>
-                </div>
+            <div className="text-center md:text-left">
+              <h1 className="text-xl md:text-3xl font-display font-bold">
+                {sp.name} Fishing in {st.name}
+              </h1>
+              {sp.scientificName && (
+                <p className="text-blue-200 italic text-sm">{sp.scientificName}</p>
               )}
-              {stateContent?.popularPorts && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm">
-                  <Anchor className="h-3.5 w-3.5 text-green-600" />
-                  <span className="text-green-800 font-medium">{stateContent.popularPorts}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>State: <Link href={`/states/${stateSlug}`} className="font-medium text-foreground hover:text-primary">{st.name}</Link></span>
-              </div>
-              {sp.categoryName && sp.categorySlug && (
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Fish className="h-4 w-4" />
-                  <span>Species: <Link href={`/species/${slug}`} className="font-medium text-foreground hover:text-primary">{sp.name}</Link></span>
-                </div>
-              )}
-              {aliases.length > 0 && (
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Tag className="h-4 w-4" />
-                  <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
-                </div>
-              )}
+              <p className="text-blue-100 text-sm mt-1">
+                {data.total} party boat charter{data.total !== 1 ? "s" : ""} in {st.name}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Boat Grid */}
-      <div className="container mx-auto px-4 py-12">
+      {/* Boat Explorer - Map + Nearest Boats (THE FOCUS) */}
+      <SpeciesBoatExplorer
+        speciesId={sp.id}
+        speciesName={sp.name}
+        speciesSlug={slug}
+        stateCode={st.code}
+        stateName={st.name}
+        stateSlug={stateSlug}
+        allBoatMarkers={allBoatMarkers}
+        fallbackBoats={fallbackBoats}
+        tierBadges={tierBadgesObj}
+        totalCount={data.total}
+      />
+
+      {/* Other States Section */}
+      {otherStates.length > 0 && (
+        <section className="bg-gray-50 border-b">
+          <div className="container mx-auto px-4 py-8">
+            <h2 className="text-lg font-display font-bold mb-3">
+              {sp.name} Fishing in Other States
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {otherStates.map((os) => (
+                <Link
+                  key={os.stateCode}
+                  href={`/species/${slug}/${os.stateSlug}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {os.stateName}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* About Section - SEO Content */}
+      {(stateContent?.content || sp.description || stateContent?.bestSeason || stateContent?.popularPorts) && (
+        <section className="bg-white border-b">
+          <div className="container mx-auto px-4 py-10">
+            <div className="max-w-3xl mx-auto space-y-4">
+              <h2 className="text-xl font-display font-bold">
+                About {sp.name} Fishing in {st.name}
+              </h2>
+
+              {stateContent?.content ? (
+                stateContent.content.split("\n\n").map((paragraph, i) => (
+                  <p key={i} className="text-muted-foreground leading-relaxed">{paragraph}</p>
+                ))
+              ) : sp.description ? (
+                <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
+              ) : null}
+
+              {/* Quick info pills */}
+              <div className="flex flex-wrap gap-3">
+                {stateContent?.bestSeason && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="text-blue-800 font-medium">Best Season: {stateContent.bestSeason}</span>
+                  </div>
+                )}
+                {stateContent?.popularPorts && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm">
+                    <Anchor className="h-3.5 w-3.5 text-green-600" />
+                    <span className="text-green-800 font-medium">Ports: {stateContent.popularPorts}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>State: <Link href={`/states/${stateSlug}`} className="font-medium text-foreground hover:text-primary">{st.name}</Link></span>
+                </div>
+                {sp.categoryName && sp.categorySlug && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Fish className="h-4 w-4" />
+                    <span>Species: <Link href={`/species/${slug}`} className="font-medium text-foreground hover:text-primary">{sp.name}</Link></span>
+                  </div>
+                )}
+                {aliases.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Tag className="h-4 w-4" />
+                    <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* All Boats Grid */}
+      <div id="all-boats" className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-display font-bold mb-6">
-          {sp.name} Charters in {st.name}
+          All {sp.name} Charters in {st.name}
           <span className="text-muted-foreground font-normal text-lg ml-2">
             ({data.total})
           </span>
@@ -212,29 +294,6 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
           </div>
         )}
       </div>
-
-      {/* Other States Section */}
-      {otherStates.length > 0 && (
-        <section className="bg-gray-50 border-t">
-          <div className="container mx-auto px-4 py-10">
-            <h2 className="text-xl font-display font-bold mb-4">
-              {sp.name} Fishing in Other States
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {otherStates.map((os) => (
-                <Link
-                  key={os.stateCode}
-                  href={`/species/${slug}/${os.stateSlug}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {os.stateName}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* BreadcrumbList JSON-LD */}
       <script
