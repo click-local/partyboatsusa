@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Fish, MapPin, Tag, Calendar, Ruler, Waves, Zap, UtensilsCrossed } from "lucide-react";
+import { ChevronRight, Fish, MapPin, Tag, Ruler, Waves, Zap, UtensilsCrossed } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
@@ -129,18 +129,9 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
               </div>
 
               {/* Quick Facts Sidebar */}
-              {(sp.seasonInfo || sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
+              {(sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
                 <div className="bg-gray-50 rounded-xl border p-5 space-y-3">
                   <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Quick Facts</h3>
-                  {sp.seasonInfo && (
-                    <div className="flex items-start gap-2.5">
-                      <Calendar className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">Season</p>
-                        <p className="text-sm font-medium">{sp.seasonInfo}</p>
-                      </div>
-                    </div>
-                  )}
                   {sp.sizeRange && (
                     <div className="flex items-start gap-2.5">
                       <Ruler className="h-4 w-4 text-primary mt-0.5 shrink-0" />
