@@ -24,9 +24,23 @@ export default function EditBoatPage() {
       }),
       fetch("/api/operator/profile").then((r) => r.json()),
     ])
-      .then(([boatData, profile]) => {
+      .then(async ([boatData, profile]) => {
+        const pro = profile?.tier?.isHighestTier || false;
+        setIsPro(pro);
+
+        // If Pro, also fetch FAQs
+        if (pro) {
+          try {
+            const faqRes = await fetch(`/api/operator/boats/${boatId}/faqs`);
+            if (faqRes.ok) {
+              boatData.faqs = await faqRes.json();
+            }
+          } catch {
+            // FAQs are optional, continue without them
+          }
+        }
+
         setBoat(boatData);
-        setIsPro(profile?.tier?.isHighestTier || false);
       })
       .catch(() => {
         toast.error("Boat not found");
@@ -36,16 +50,38 @@ export default function EditBoatPage() {
   }, [boatId, router]);
 
   async function handleSubmit(data: BoatFormData) {
+    const { faqs, ...boatData } = data;
+
     const res = await fetch(`/api/operator/boats/${boatId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify(boatData),
     });
 
     const result = await res.json();
     if (!res.ok) {
       toast.error(result.error || "Failed to update boat");
       return;
+    }
+
+    // Save FAQs separately if Pro
+    if (isPro && faqs && faqs.length > 0) {
+      const faqRes = await fetch(`/api/operator/boats/${boatId}/faqs`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ faqs }),
+      });
+      if (!faqRes.ok) {
+        toast.error("Boat saved, but FAQs failed to update");
+        return;
+      }
+    } else if (isPro && faqs && faqs.length === 0) {
+      // Clear FAQs if Pro and all removed
+      await fetch(`/api/operator/boats/${boatId}/faqs`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ faqs: [] }),
+      });
     }
 
     toast.success("Boat updated!");

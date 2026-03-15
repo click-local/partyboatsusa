@@ -139,7 +139,7 @@ export default function AdminClaimsPage() {
                     <p className="text-xs text-gray-500">{claim.operatorEmail}</p>
                   </td>
                   <td className="py-3 pr-4 max-w-[200px]">
-                    <p className="text-gray-600 truncate">{claim.message || "—"}</p>
+                    <p className="text-gray-600 truncate">{claim.message || "-"}</p>
                   </td>
                   <td className="py-3 pr-4">
                     <StatusBadge status={claim.status} />

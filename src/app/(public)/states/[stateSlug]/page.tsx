@@ -15,6 +15,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 
 export const revalidate = 1800;
 
+export async function generateStaticParams() {
+  const { getStates } = await import("@/lib/db/queries/states");
+  const allStates = await getStates();
+  return allStates.map((s) => ({ stateSlug: s.slug }));
+}
+
 interface Props {
   params: Promise<{ stateSlug: string }>;
   searchParams: Promise<{ page?: string }>;

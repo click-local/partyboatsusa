@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     url: SITE_URL,
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Party Boats USA - Find the Best Party Boat Fishing Trips",
+    description:
+      "Discover and book top-rated headboats and open party fishing charters across the United States.",
+  },
 };
 
 export default async function Home() {
@@ -43,7 +49,7 @@ export default async function Home() {
     })
       .from(bragBoardPhotos)
       .innerJoin(boats, eq(bragBoardPhotos.boatId, boats.id))
-      .where(eq(bragBoardPhotos.status, "approved"))
+      .where(and(eq(bragBoardPhotos.status, "approved"), eq(boats.isPublished, true)))
       .orderBy(desc(bragBoardPhotos.submittedAt))
       .limit(8),
     db.select({
@@ -308,12 +314,15 @@ export default async function Home() {
 
       {/* Explore Fishing Destinations */}
       {destPages.length > 0 && (
-        <section className="py-12 bg-gray-50">
+        <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-4">
               Explore Fishing Destinations
             </h2>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
+              Find party boat fishing trips across the United States
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {destPages.map((page) => {
                 const state = stateMap.get(page.referenceId);
                 if (!state) return null;
@@ -321,17 +330,28 @@ export default async function Home() {
                   <Link
                     key={page.id}
                     href={`/states/${state.slug}`}
-                    className="text-primary font-medium hover:text-primary/70 transition-colors"
+                    className="group flex items-center gap-3 p-3 bg-white rounded-xl border hover:shadow-md hover:border-primary/30 transition-all"
                   >
-                    {state.name}
+                    <div className="flex-shrink-0 w-10 h-7 rounded overflow-hidden border border-gray-200 shadow-sm">
+                      <Image
+                        src={`https://flagcdn.com/w80/us-${state.code.toLowerCase()}.png`}
+                        alt={`${state.name} flag`}
+                        width={40}
+                        height={28}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                      {state.name}
+                    </span>
                   </Link>
                 );
               })}
             </div>
-            <div className="text-center mt-8">
+            <div className="text-center mt-10">
               <Link
                 href="/destinations"
-                className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
               >
                 View All Destinations <ArrowRight className="h-4 w-4" />
               </Link>

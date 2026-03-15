@@ -29,15 +29,6 @@ export async function getCities() {
   return db.select().from(cities).orderBy(cities.name);
 }
 
-export async function getCitiesByState(stateCode: string) {
-  return db
-    .selectDistinct({ id: cities.id, name: cities.name, slug: cities.slug, stateCode: cities.stateCode })
-    .from(cities)
-    .innerJoin(boats, sql`lower(${boats.cityName}) = lower(${cities.name}) AND ${boats.stateCode} = ${cities.stateCode}`)
-    .where(sql`${cities.stateCode} = ${stateCode} AND ${boats.isPublished} = true`)
-    .orderBy(cities.name);
-}
-
 export async function getAllStatesWithBoatCounts() {
   return db
     .select({
@@ -93,7 +84,3 @@ export async function getTopSpeciesByState(limit = 5): Promise<Map<string, State
   return result;
 }
 
-export async function getCityBySlug(slug: string) {
-  const [city] = await db.select().from(cities).where(eq(cities.slug, slug));
-  return city ?? null;
-}

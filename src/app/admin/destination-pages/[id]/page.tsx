@@ -77,7 +77,7 @@ function ImageUploader({ value, onChange, label }: { value: string; onChange: (u
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {value ? (
         <div className="relative">
-          <img src={value} alt="" className="w-full h-40 object-cover rounded-lg border" />
+          <img src={value} alt={label} className="w-full h-40 object-cover rounded-lg border" />
           <button type="button" onClick={() => onChange("")} className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70">
             <X className="h-4 w-4" />
           </button>

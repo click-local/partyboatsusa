@@ -12,7 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BoatCard } from "@/components/boat-card";
 import { ReviewSection } from "@/components/review-section";
-import { getBoatBySlug, getNearbyBoats, getFleetBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
+import { getBoatBySlug, getNearbyBoats, getFleetBoats, getTierBadgesForBoats, getFaqsByBoat } from "@/lib/db/queries/boats";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { getReviewsByBoat, getBoatRatingStats } from "@/lib/db/queries/reviews";
 import { getBragBoardPhotosByBoat } from "@/lib/db/queries/brag-board";
 import { BragBoardFormDialog } from "@/components/brag-board-form-dialog";
@@ -26,6 +32,14 @@ import type { Metadata } from "next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
 
 export const revalidate = 1800;
+
+export async function generateStaticParams() {
+  const allBoats = await db
+    .select({ slug: boatsTable.slug })
+    .from(boatsTable)
+    .where(eq(boatsTable.isPublished, true));
+  return allBoats.map((b) => ({ slug: b.slug }));
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -46,6 +60,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   return {
     title,
     description,
+    ...(isPreview ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title: boat.name,
       description: description || undefined,
@@ -71,7 +86,7 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
 
   const isUnclaimed = !boat.operatorId;
 
-  const [reviewData, ratingStats, nearbyBoats, fleetBoats, bragPhotos, boatsForSelect, speciesList] = await Promise.all([
+  const [reviewData, ratingStats, nearbyBoats, fleetBoats, bragPhotos, boatsForSelect, speciesList, boatFaqs] = await Promise.all([
     getReviewsByBoat(boat.id),
     getBoatRatingStats(boat.id),
     boat.latitude && boat.longitude
@@ -95,6 +110,7 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
       .select({ id: species.id, name: species.name })
       .from(species)
       .orderBy(asc(species.name)),
+    getFaqsByBoat(boat.id),
   ]);
 
   // Filter out fleet boats from nearby boats to avoid duplicates
@@ -171,6 +187,19 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
     ],
   };
 
+  const faqJsonLd = boatFaqs.length > 0 && boat.operatorTier?.isHighestTier ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: boatFaqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  } : null;
+
   return (
     <div className="pb-20 lg:pb-0">
       {isPreview && !boat.isPublished && (
@@ -186,6 +215,12 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
 
       {/* Breadcrumbs */}
       <div className="bg-gray-50 border-b">
@@ -320,7 +355,7 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
               <>
                 <div>
                   <h2 className="text-2xl font-display font-bold mb-4">Target Species</h2>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {boat.species.map((sp) => (
                       <Link key={sp.id} href={`/species/${sp.slug}`} className="group flex flex-col items-center gap-1.5">
                         {sp.imageUrl ? (
@@ -398,6 +433,31 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
                       </div>
                     ))}
                   </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* FAQs - Pro only */}
+            {boat.operatorTier?.isHighestTier && boatFaqs.length > 0 && (
+              <>
+                <div>
+                  <h2 className="text-2xl font-display font-bold mb-4">Frequently Asked Questions</h2>
+                  <Accordion className="space-y-3">
+                    {boatFaqs.map((faq) => (
+                      <AccordionItem
+                        key={faq.id}
+                        className="bg-gray-50 border rounded-lg px-6"
+                      >
+                        <AccordionTrigger className="text-left font-semibold hover:no-underline">
+                          {faq.question}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-muted-foreground">
+                          {faq.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 </div>
                 <Separator />
               </>

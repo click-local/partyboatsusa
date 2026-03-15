@@ -9,6 +9,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 
 export const revalidate = 1800;
 
+export async function generateStaticParams() {
+  const { getAllTripTypesWithBoatCounts } = await import("@/lib/db/queries/boats");
+  const tripTypes = await getAllTripTypesWithBoatCounts();
+  return tripTypes.map((tt) => ({ slug: tt.slug }));
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ page?: string }>;
@@ -27,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: desc,
     alternates: { canonical: `/trip-types/${slug}` },
     openGraph: { title, description: desc, url: `${SITE_URL}/trip-types/${slug}`, type: "website" },
+    twitter: { card: "summary_large_image", title, description: desc },
   };
 }
 

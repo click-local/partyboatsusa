@@ -12,6 +12,16 @@ export const metadata: Metadata = {
   description:
     "Explore party boat fishing destinations across the United States. Find charters by state and city.",
   alternates: { canonical: "/destinations" },
+  openGraph: {
+    title: "Fishing Destinations - Party Boat Charters by State | PartyBoatsUSA",
+    description: "Explore party boat fishing destinations across the United States. Find charters by state and city.",
+    url: "/destinations",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fishing Destinations - Party Boat Charters by State | PartyBoatsUSA",
+    description: "Explore party boat fishing destinations across the United States. Find charters by state and city.",
+  },
 };
 
 export default async function DestinationsPage() {

@@ -47,7 +47,7 @@ export function ImageUpload({ value, onChange, onRemove, label = "Upload Image" 
     <div>
       {value ? (
         <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
-          <img src={value} alt="" className="w-full h-full object-cover" />
+          <img src={value} alt="Uploaded image preview" className="w-full h-full object-cover" />
           {onRemove && (
             <button
               type="button"

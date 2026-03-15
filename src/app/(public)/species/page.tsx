@@ -13,6 +13,16 @@ export const metadata: Metadata = {
   description:
     "Browse party boat fishing charters by target species. Find boats targeting snapper, grouper, tuna, mahi-mahi, and more across the USA.",
   alternates: { canonical: "/species" },
+  openGraph: {
+    title: "Fish Species - Party Boat Fishing Targets | PartyBoatsUSA",
+    description: "Browse party boat fishing charters by target species. Find boats targeting snapper, grouper, tuna, mahi-mahi, and more across the USA.",
+    url: `${SITE_URL}/species`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fish Species - Party Boat Fishing Targets | PartyBoatsUSA",
+    description: "Browse party boat fishing charters by target species. Find boats targeting snapper, grouper, tuna, mahi-mahi, and more across the USA.",
+  },
 };
 
 export default async function SpeciesPage() {

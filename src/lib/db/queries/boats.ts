@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, speciesCategories, speciesAliases, speciesStateContent, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, boatSpecies, boatFaqs, amenities, tripTypes, species, speciesCategories, speciesAliases, speciesStateContent, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -439,7 +439,8 @@ export async function getAllSpeciesWithBoatCounts() {
       .groupBy(species.id, species.name, species.slug, species.sortOrder, species.scientificName, species.description, species.habitat, species.sizeRange, species.fightRating, species.imageUrl, species.categoryId, speciesCategories.name, speciesCategories.slug, speciesCategories.sortOrder)
       .having(sql`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END) > 0`)
       .orderBy(speciesCategories.sortOrder, species.name);
-  } catch {
+  } catch (e) {
+    console.error("[getAllSpeciesWithBoatCounts]", e);
     return [];
   }
 }
@@ -464,7 +465,8 @@ export async function getPopularSpecies(limit = 8) {
       .orderBy(sql`boat_count DESC`)
       .limit(limit);
     return rows;
-  } catch {
+  } catch (e) {
+    console.error("[getPopularSpecies]", e);
     return [];
   }
 }
@@ -475,7 +477,8 @@ export async function getAllSpeciesCategories() {
       .select()
       .from(speciesCategories)
       .orderBy(speciesCategories.sortOrder);
-  } catch {
+  } catch (e) {
+    console.error("[getAllSpeciesCategories]", e);
     return [];
   }
 }
@@ -513,7 +516,8 @@ export async function searchSpeciesByName(query: string) {
       )
       .orderBy(species.name)
       .limit(50);
-  } catch {
+  } catch (e) {
+    console.error("[searchSpeciesByName]", e);
     return [];
   }
 }
@@ -570,7 +574,8 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
       page,
       totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
     };
-  } catch {
+  } catch (e) {
+    console.error("[getBoatsBySpecies]", e);
     return null;
   }
 }
@@ -644,7 +649,8 @@ export async function getBoatsBySpeciesAndState(speciesSlug: string, stateSlug: 
       totalPages: Math.ceil(Number(countResult[0]?.count ?? 0) / limit),
       otherStates,
     };
-  } catch {
+  } catch (e) {
+    console.error("[getBoatsBySpeciesAndState]", e);
     return null;
   }
 }
@@ -660,7 +666,8 @@ export async function getAllSpeciesStateCombinations() {
       .innerJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
       .innerJoin(species, eq(boatSpecies.speciesId, species.id))
       .innerJoin(states, eq(boats.stateCode, states.code));
-  } catch {
+  } catch (e) {
+    console.error("[getAllSpeciesStateCombinations]", e);
     return [];
   }
 }
@@ -683,7 +690,8 @@ export async function getStatesForSpecies(speciesSlug: string) {
       .where(eq(boatSpecies.speciesId, sp.id))
       .groupBy(states.name, states.slug, states.code)
       .orderBy(states.name);
-  } catch {
+  } catch (e) {
+    console.error("[getStatesForSpecies]", e);
     return [];
   }
 }
@@ -715,7 +723,21 @@ export async function getSpeciesByCategory(categorySlug: string) {
       .orderBy(species.name);
 
     return { category: cat, species: speciesList };
-  } catch {
+  } catch (e) {
+    console.error("[getSpeciesByCategory]", e);
     return null;
   }
+}
+
+export async function getFaqsByBoat(boatId: number) {
+  return db
+    .select({
+      id: boatFaqs.id,
+      question: boatFaqs.question,
+      answer: boatFaqs.answer,
+      sortOrder: boatFaqs.sortOrder,
+    })
+    .from(boatFaqs)
+    .where(eq(boatFaqs.boatId, boatId))
+    .orderBy(asc(boatFaqs.sortOrder));
 }

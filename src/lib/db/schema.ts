@@ -299,6 +299,16 @@ export const bragBoardPhotoSpecies = pgTable("brag_board_photo_species", {
   speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
 });
 
+export const boatFaqs = pgTable("boat_faqs", {
+  id: serial("id").primaryKey(),
+  boatId: integer("boat_id").notNull().references(() => boats.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   boatId: integer("boat_id").notNull().references(() => boats.id, { onDelete: "cascade" }),

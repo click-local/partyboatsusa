@@ -34,6 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: desc,
     alternates: { canonical: `/species/category/${slug}` },
     openGraph: { title, description: desc, url: `${SITE_URL}/species/category/${slug}`, type: "website" },
+    twitter: { card: "summary_large_image", title, description: desc },
   };
 }
 

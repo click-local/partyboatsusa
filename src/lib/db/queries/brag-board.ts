@@ -10,7 +10,7 @@ export interface BragBoardFilters {
 export async function getBragBoardPhotos(page = 1, limit = 24, filters?: BragBoardFilters) {
   const offset = (page - 1) * limit;
 
-  const conditions = [eq(bragBoardPhotos.status, "approved")];
+  const conditions = [eq(bragBoardPhotos.status, "approved"), eq(boats.isPublished, true)];
   if (filters?.stateCode) {
     conditions.push(eq(boats.stateCode, filters.stateCode));
   }
@@ -99,7 +99,8 @@ export async function getBragBoardPhotosBySpecies(speciesId: number, limit = 8) 
     .where(
       and(
         eq(bragBoardPhotoSpecies.speciesId, speciesId),
-        eq(bragBoardPhotos.status, "approved")
+        eq(bragBoardPhotos.status, "approved"),
+        eq(boats.isPublished, true)
       )
     )
     .orderBy(desc(bragBoardPhotos.submittedAt))

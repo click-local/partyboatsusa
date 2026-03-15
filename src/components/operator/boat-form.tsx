@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, Save, Plus, X, ArrowUpCircle } from "lucide-react";
+import { Loader2, Save, Plus, X, ArrowUpCircle, ChevronUp, ChevronDown, HelpCircle } from "lucide-react";
 import { ImageUpload } from "./image-upload";
 import { SpeciesSelect } from "@/components/species-select";
 
@@ -40,6 +40,7 @@ export interface BoatFormData {
   tripTypeIds: number[];
   amenityIds: number[];
   speciesIds: number[];
+  faqs: { id?: number; question: string; answer: string; sortOrder: number }[];
 }
 
 const DEFAULT_DATA: BoatFormData = {
@@ -72,6 +73,7 @@ const DEFAULT_DATA: BoatFormData = {
   tripTypeIds: [],
   amenityIds: [],
   speciesIds: [],
+  faqs: [],
 };
 
 interface BoatFormProps {
@@ -209,6 +211,29 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
       const arr = prev[field] as number[];
       return { ...prev, [field]: arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id] };
     });
+  }
+
+  function addFaq() {
+    if (data.faqs.length >= 10) return;
+    update("faqs", [...data.faqs, { question: "", answer: "", sortOrder: data.faqs.length }]);
+  }
+
+  function removeFaq(index: number) {
+    const updated = data.faqs.filter((_, i) => i !== index).map((f, i) => ({ ...f, sortOrder: i }));
+    update("faqs", updated);
+  }
+
+  function updateFaq(index: number, field: "question" | "answer", value: string) {
+    const updated = data.faqs.map((f, i) => (i === index ? { ...f, [field]: value } : f));
+    update("faqs", updated);
+  }
+
+  function moveFaq(index: number, direction: "up" | "down") {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= data.faqs.length) return;
+    const updated = [...data.faqs];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    update("faqs", updated.map((f, i) => ({ ...f, sortOrder: i })));
   }
 
   function addGalleryImage(url: string) {
@@ -565,6 +590,99 @@ export function BoatForm({ initialData, onSubmit, submitLabel = "Submit", isPro 
                 </button>
               </span>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* FAQs */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <HelpCircle className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Frequently Asked Questions</h2>
+        </div>
+        {isPro ? (
+          <>
+            <p className="text-sm text-muted-foreground">Add up to 10 FAQs to help anglers learn more about your boat and trips. These appear on your public listing with rich snippet support for search engines.</p>
+            {data.faqs.map((faq, index) => (
+              <div key={index} className="border rounded-lg p-4 space-y-3 bg-gray-50/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">FAQ {index + 1}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveFaq(index, "up")}
+                      disabled={index === 0}
+                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move up"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveFaq(index, "down")}
+                      disabled={index === data.faqs.length - 1}
+                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move down"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFaq(index)}
+                      className="p-1 rounded hover:bg-red-100 text-red-500"
+                      title="Remove FAQ"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Question</label>
+                  <input
+                    type="text"
+                    value={faq.question}
+                    onChange={(e) => updateFaq(index, "question", e.target.value)}
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="e.g., What time should I arrive?"
+                    maxLength={500}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Answer</label>
+                  <textarea
+                    value={faq.answer}
+                    onChange={(e) => updateFaq(index, "answer", e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Provide a helpful answer..."
+                    maxLength={2000}
+                  />
+                </div>
+              </div>
+            ))}
+            {data.faqs.length < 10 && (
+              <button
+                type="button"
+                onClick={addFaq}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80"
+              >
+                <Plus className="h-4 w-4" />
+                Add FAQ
+              </button>
+            )}
+          </>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center bg-muted/30">
+            <p className="text-sm text-muted-foreground mb-2">
+              Custom FAQs with rich snippet support are available on the Pro Captain plan.
+            </p>
+            <Link
+              href="/operator/upgrade"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <ArrowUpCircle className="h-4 w-4" />
+              Upgrade to Pro
+            </Link>
           </div>
         )}
       </section>

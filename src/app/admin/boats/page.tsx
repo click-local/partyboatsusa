@@ -396,7 +396,7 @@ export default function AdminBoatsPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {boat.primaryImageUrl && (
-                      <Image src={formatImageUrl(boat.primaryImageUrl)} alt="" width={40} height={40} className="w-10 h-10 rounded object-cover" />
+                      <Image src={formatImageUrl(boat.primaryImageUrl)} alt={boat.name} width={40} height={40} className="w-10 h-10 rounded object-cover" />
                     )}
                     <div>
                       <div className="font-medium">{boat.name}</div>

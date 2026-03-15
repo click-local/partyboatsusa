@@ -14,10 +14,20 @@ import type { Metadata } from "next";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Brag Board",
+  title: "Brag Board - Latest Catches | PartyBoatsUSA",
   description:
     "Check out the latest catches from party boat fishing trips across the USA! Share your own photos on the brag board.",
   alternates: { canonical: "/brag-board" },
+  openGraph: {
+    title: "Brag Board - Latest Catches | PartyBoatsUSA",
+    description: "Check out the latest catches from party boat fishing trips across the USA! Share your own photos on the brag board.",
+    url: "/brag-board",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Brag Board - Latest Catches | PartyBoatsUSA",
+    description: "Check out the latest catches from party boat fishing trips across the USA! Share your own photos on the brag board.",
+  },
 };
 
 interface Props {
@@ -173,6 +183,21 @@ export default async function BragBoardPage({ searchParams }: Props) {
           </div>
         )}
       </section>
+
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://partyboatsusa.com" },
+              { "@type": "ListItem", position: 2, name: "Brag Board", item: "https://partyboatsusa.com/brag-board" },
+            ],
+          }),
+        }}
+      />
     </>
   );
 }

@@ -12,6 +12,16 @@ export const metadata: Metadata = {
   description:
     "Browse party boat fishing trips by type. Find half-day, full-day, night fishing, deep sea, and more charter options across the USA.",
   alternates: { canonical: "/trip-types" },
+  openGraph: {
+    title: "Trip Types - Party Boat Fishing Trips",
+    description: "Browse party boat fishing trips by type. Find half-day, full-day, night fishing, deep sea, and more charter options across the USA.",
+    url: `${SITE_URL}/trip-types`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trip Types - Party Boat Fishing Trips",
+    description: "Browse party boat fishing trips by type. Find half-day, full-day, night fishing, deep sea, and more charter options across the USA.",
+  },
 };
 
 export default async function TripTypesPage() {

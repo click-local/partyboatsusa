@@ -148,7 +148,7 @@ function ClaimContent() {
                   1. Create a free account or sign in
                 </p>
                 <p className="text-xs text-blue-600">
-                  Quick setup — no credit card required
+                  Quick setup, no credit card required
                 </p>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { ChevronRight, Fish, MapPin, Tag, Ruler, Waves, Zap, UtensilsCrossed, Ca
 import { Card } from "@/components/ui/card";
 import { BoatCard } from "@/components/boat-card";
 import { SpeciesBoatExplorer } from "@/components/species-boat-explorer";
-import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
+import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats, getAllSpeciesWithBoatCounts } from "@/lib/db/queries/boats";
 import { getBragBoardPhotosBySpecies } from "@/lib/db/queries/brag-board";
 import { getTopSpeciesByState } from "@/lib/db/queries/states";
 import { formatImageUrl } from "@/lib/utils";
@@ -15,6 +15,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 const GRID_PAGE_SIZE = 9;
 
 export const revalidate = 1800;
+
+export async function generateStaticParams() {
+  const allSpecies = await getAllSpeciesWithBoatCounts();
+  return allSpecies.map((sp) => ({ slug: sp.slug }));
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -39,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: desc,
     alternates: { canonical: `/species/${slug}` },
     openGraph: { title, description: desc, url: `${SITE_URL}/species/${slug}`, type: "website" },
+    twitter: { card: "summary_large_image", title, description: desc },
   };
 }
 

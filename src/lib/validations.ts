@@ -188,3 +188,12 @@ export const adminBragBoardEditSchema = z.object({
 export const operatorReviewReplySchema = z.object({
   reply: z.string().min(1).max(2000),
 });
+
+export const boatFaqBulkSchema = z.object({
+  faqs: z.array(z.object({
+    id: z.number().int().positive().optional(),
+    question: z.string().min(1).max(500),
+    answer: z.string().min(1).max(2000),
+    sortOrder: z.number().int().min(0),
+  })).max(10),
+});

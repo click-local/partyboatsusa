@@ -10,9 +10,9 @@ import {
   Anchor,
   X,
   MapPin,
-  MessageCircle,
   Fish,
   Camera,
+  LogIn,
 } from "lucide-react";
 
 const NAV_LINKS = [
@@ -20,7 +20,6 @@ const NAV_LINKS = [
   { href: "/destinations", label: "Destinations", icon: MapPin },
   { href: "/species", label: "Fish Species", icon: Fish },
   { href: "/brag-board", label: "Brag Board", icon: Camera },
-  { href: "/contact", label: "Contact", icon: MessageCircle },
 ];
 
 export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
@@ -43,7 +42,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
     <>
       <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20 md:h-20 lg:h-28">
+          <div className="relative flex items-center justify-between h-20 md:h-20 lg:h-28">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               {logoUrl ? (
@@ -65,8 +64,8 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
               )}
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            {/* Desktop Navigation - Centered */}
+            <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -80,13 +79,23 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
                   {link.label}
                 </Link>
               ))}
+            </nav>
+
+            {/* Right Side - Login & CTA */}
+            <div className="hidden lg:flex items-center gap-2">
               <Link
                 href="/operator/login"
-                className="ml-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                Captain&apos;s Portal
+                Login
               </Link>
-            </nav>
+              <Link
+                href="/operator/login"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+              >
+                List Your Boat
+              </Link>
+            </div>
 
             {/* Mobile Menu Button */}
             <button
@@ -185,15 +194,23 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null }) {
             })}
           </nav>
 
-          {/* Bottom CTA */}
-          <div className="px-6 pb-8">
+          {/* Bottom CTAs */}
+          <div className="px-6 pb-8 space-y-3">
             <Link
               href="/operator/login"
               onClick={() => setMobileOpen(false)}
               className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-white text-primary font-semibold text-base hover:bg-blue-50 transition-colors"
             >
               <Anchor className="h-5 w-5" />
-              Captain&apos;s Portal
+              List Your Boat
+            </Link>
+            <Link
+              href="/operator/login"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white/70 hover:text-white transition-colors text-sm"
+            >
+              <LogIn className="h-4 w-4" />
+              Operator Login
             </Link>
           </div>
         </div>
