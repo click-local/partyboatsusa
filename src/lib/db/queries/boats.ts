@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, speciesCategories, speciesAliases, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
+import { boats, boatAmenities, boatTripTypes, boatSpecies, amenities, tripTypes, species, speciesCategories, speciesAliases, speciesStateContent, operators, membershipTiers, reviews, bragBoardPhotos, states } from "@/lib/db/schema";
 import { eq, and, ilike, sql, desc, asc, inArray, gte, lte, or } from "drizzle-orm";
 
 export interface SearchFilters {
@@ -451,6 +451,12 @@ export async function getBoatsBySpecies(speciesSlug: string, page = 1, limit = 5
         slug: species.slug,
         scientificName: species.scientificName,
         description: species.description,
+        descriptionLong: species.descriptionLong,
+        seasonInfo: species.seasonInfo,
+        sizeRange: species.sizeRange,
+        habitat: species.habitat,
+        fightRating: species.fightRating,
+        edibility: species.edibility,
         imageUrl: species.imageUrl,
         categoryId: species.categoryId,
         categoryName: speciesCategories.name,
@@ -518,11 +524,11 @@ export async function getBoatsBySpeciesAndState(speciesSlug: string, stateSlug: 
     const [st] = await db.select().from(states).where(eq(states.slug, stateSlug)).limit(1);
     if (!st) return null;
 
-    // Get aliases
-    const aliases = await db
-      .select({ name: speciesAliases.name })
-      .from(speciesAliases)
-      .where(eq(speciesAliases.speciesId, sp.id));
+    // Get aliases and state-specific content
+    const [aliases, stateContentResult] = await Promise.all([
+      db.select({ name: speciesAliases.name }).from(speciesAliases).where(eq(speciesAliases.speciesId, sp.id)),
+      db.select().from(speciesStateContent).where(and(eq(speciesStateContent.speciesId, sp.id), eq(speciesStateContent.stateCode, st.code))).limit(1),
+    ]);
 
     // Get boats matching both species and state
     const where = and(
@@ -552,6 +558,7 @@ export async function getBoatsBySpeciesAndState(speciesSlug: string, stateSlug: 
     return {
       species: sp,
       state: st,
+      stateContent: stateContentResult[0] || null,
       aliases: aliases.map((a) => a.name),
       boats: results,
       total: Number(countResult[0]?.count ?? 0),

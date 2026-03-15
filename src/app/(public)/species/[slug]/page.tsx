@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Fish, MapPin, Tag } from "lucide-react";
+import { ChevronRight, Fish, MapPin, Tag, Calendar, Ruler, Waves, Zap, UtensilsCrossed } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
@@ -22,7 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const sp = data.species;
   const title = `${sp.name} Fishing - Party Boat Charters | PartyBoatsUSA`;
-  const desc = sp.description
+  const desc = sp.descriptionLong
+    ? sp.descriptionLong.slice(0, 155).replace(/\n/g, " ").trim() + "..."
+    : sp.description
     ? sp.description.slice(0, 155)
     : `Find ${data.total} party boat fishing charters targeting ${sp.name} across the USA. Compare prices, read reviews, and book your trip.`;
 
@@ -100,31 +102,96 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
       </section>
 
       {/* Species Info Section */}
-      {(sp.description || aliases.length > 0 || sp.categoryName) && (
-        <section className="bg-white border-b">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-3xl mx-auto space-y-4">
-              {sp.description && (
-                <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
-              )}
-              <div className="flex flex-wrap gap-4 text-sm">
-                {sp.categoryName && sp.categorySlug && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Fish className="h-4 w-4" />
-                    <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
-                  </div>
+      <section className="bg-white border-b">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-4xl mx-auto">
+            {/* Quick Facts + Intro Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Main Content */}
+              <div className="md:col-span-2 space-y-4">
+                {sp.description && (
+                  <p className="text-lg text-muted-foreground leading-relaxed">{sp.description}</p>
                 )}
-                {aliases.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Tag className="h-4 w-4" />
-                    <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {sp.categoryName && sp.categorySlug && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Fish className="h-4 w-4" />
+                      <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
+                    </div>
+                  )}
+                  {aliases.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Tag className="h-4 w-4" />
+                      <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Quick Facts Sidebar */}
+              {(sp.seasonInfo || sp.sizeRange || sp.habitat || sp.fightRating || sp.edibility) && (
+                <div className="bg-gray-50 rounded-xl border p-5 space-y-3">
+                  <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Quick Facts</h3>
+                  {sp.seasonInfo && (
+                    <div className="flex items-start gap-2.5">
+                      <Calendar className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">Season</p>
+                        <p className="text-sm font-medium">{sp.seasonInfo}</p>
+                      </div>
+                    </div>
+                  )}
+                  {sp.sizeRange && (
+                    <div className="flex items-start gap-2.5">
+                      <Ruler className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">Size Range</p>
+                        <p className="text-sm font-medium">{sp.sizeRange}</p>
+                      </div>
+                    </div>
+                  )}
+                  {sp.habitat && (
+                    <div className="flex items-start gap-2.5">
+                      <Waves className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">Habitat</p>
+                        <p className="text-sm font-medium">{sp.habitat}</p>
+                      </div>
+                    </div>
+                  )}
+                  {sp.fightRating && (
+                    <div className="flex items-start gap-2.5">
+                      <Zap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">Fight</p>
+                        <p className="text-sm font-medium">{sp.fightRating}</p>
+                      </div>
+                    </div>
+                  )}
+                  {sp.edibility && (
+                    <div className="flex items-start gap-2.5">
+                      <UtensilsCrossed className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">Table Fare</p>
+                        <p className="text-sm font-medium">{sp.edibility}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Long Description */}
+            {sp.descriptionLong && (
+              <div className="mt-8 prose prose-sm max-w-none text-foreground">
+                {sp.descriptionLong.split("\n\n").map((paragraph, i) => (
+                  <p key={i} className="text-muted-foreground leading-relaxed mb-4">{paragraph}</p>
+                ))}
+              </div>
+            )}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Boat Grid */}
       <div className="container mx-auto px-4 py-12">

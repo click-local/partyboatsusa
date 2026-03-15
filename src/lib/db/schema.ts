@@ -59,12 +59,30 @@ export const species = pgTable("species", {
   categoryId: integer("category_id").references(() => speciesCategories.id),
   scientificName: text("scientific_name"),
   description: text("description"),
+  descriptionLong: text("description_long"),
+  seasonInfo: text("season_info"),
+  sizeRange: text("size_range"),
+  habitat: text("habitat"),
+  fightRating: text("fight_rating"),
+  edibility: text("edibility"),
   imageUrl: text("image_url"),
 });
 
 export const insertSpeciesSchema = createInsertSchema(species).omit({ id: true });
 export type InsertSpecies = z.infer<typeof insertSpeciesSchema>;
 export type SelectSpecies = typeof species.$inferSelect;
+
+export const speciesStateContent = pgTable("species_state_content", {
+  id: serial("id").primaryKey(),
+  speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
+  stateCode: text("state_code").notNull(),
+  content: text("content").notNull(),
+  bestSeason: text("best_season"),
+  popularPorts: text("popular_ports"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SelectSpeciesStateContent = typeof speciesStateContent.$inferSelect;
 
 export const speciesAliases = pgTable("species_aliases", {
   id: serial("id").primaryKey(),

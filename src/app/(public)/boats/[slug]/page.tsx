@@ -389,7 +389,7 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-[5.5rem] lg:top-[7.5rem] space-y-6">
               <Card className="shadow-lg border-primary/10 overflow-hidden pt-0 gap-0">
                 <div className="bg-primary p-4 text-white text-center">
                   <p className="text-sm font-medium opacity-90">Starting from</p>

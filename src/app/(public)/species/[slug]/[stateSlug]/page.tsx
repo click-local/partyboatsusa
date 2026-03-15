@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Fish, MapPin, Tag } from "lucide-react";
+import { ChevronRight, Fish, MapPin, Tag, Calendar, Anchor } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { getBoatsBySpeciesAndState, getAllSpeciesStateCombinations, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import type { Metadata } from "next";
@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { species: sp, state: st } = data;
   const title = `${sp.name} Fishing in ${st.name} - Party Boat Charters | PartyBoatsUSA`;
-  const desc = `Find ${data.total} party boat fishing charters targeting ${sp.name} in ${st.name}. Compare prices, read reviews, and book your ${sp.name} fishing trip today.`;
+  const stContent = data.stateContent;
+  const desc = stContent?.content
+    ? stContent.content.slice(0, 155).trim() + "..."
+    : `Find ${data.total} party boat fishing charters targeting ${sp.name} in ${st.name}. Compare prices, read reviews, and book your ${sp.name} fishing trip today.`;
 
   return {
     title,
@@ -51,7 +54,7 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
   const data = await getBoatsBySpeciesAndState(slug, stateSlug, currentPage, 50);
   if (!data) notFound();
 
-  const { species: sp, state: st, aliases, otherStates } = data;
+  const { species: sp, state: st, stateContent, aliases, otherStates } = data;
   const tierBadges = await getTierBadgesForBoats(data.boats.map((b) => b.operatorId));
 
   return (
@@ -107,36 +110,53 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
         </div>
       </section>
 
-      {/* Species Info Section */}
-      {(sp.description || aliases.length > 0 || sp.categoryName) && (
-        <section className="bg-white border-b">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-3xl mx-auto space-y-4">
-              {sp.description && (
-                <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
-              )}
-              <div className="flex flex-wrap gap-4 text-sm">
-                {sp.categoryName && sp.categorySlug && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Fish className="h-4 w-4" />
-                    <span>Category: <Link href={`/species/category/${sp.categorySlug}`} className="font-medium text-foreground hover:text-primary">{sp.categoryName}</Link></span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>State: <Link href={`/states/${stateSlug}`} className="font-medium text-foreground hover:text-primary">{st.name}</Link></span>
+      {/* State-Specific Info Section */}
+      <section className="bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-3xl mx-auto space-y-4">
+            {stateContent?.content ? (
+              <p className="text-muted-foreground leading-relaxed">{stateContent.content}</p>
+            ) : sp.description ? (
+              <p className="text-muted-foreground leading-relaxed">{sp.description}</p>
+            ) : null}
+
+            {/* Quick info pills */}
+            <div className="flex flex-wrap gap-3">
+              {stateContent?.bestSeason && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                  <span className="text-blue-800 font-medium">{stateContent.bestSeason}</span>
                 </div>
-                {aliases.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Tag className="h-4 w-4" />
-                    <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
-                  </div>
-                )}
+              )}
+              {stateContent?.popularPorts && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm">
+                  <Anchor className="h-3.5 w-3.5 text-green-600" />
+                  <span className="text-green-800 font-medium">{stateContent.popularPorts}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>State: <Link href={`/states/${stateSlug}`} className="font-medium text-foreground hover:text-primary">{st.name}</Link></span>
               </div>
+              {sp.categoryName && sp.categorySlug && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Fish className="h-4 w-4" />
+                  <span>Species: <Link href={`/species/${slug}`} className="font-medium text-foreground hover:text-primary">{sp.name}</Link></span>
+                </div>
+              )}
+              {aliases.length > 0 && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Tag className="h-4 w-4" />
+                  <span>Also known as: <span className="font-medium text-foreground">{aliases.join(", ")}</span></span>
+                </div>
+              )}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Boat Grid */}
       <div className="container mx-auto px-4 py-12">
