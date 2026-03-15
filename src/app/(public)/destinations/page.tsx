@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Ship, MapPin, ChevronRight } from "lucide-react";
-import { getAllStatesWithBoatCounts } from "@/lib/db/queries/states";
+import { getAllStatesWithBoatCounts, getTopSpeciesByState } from "@/lib/db/queries/states";
 import { USStatesMap } from "@/components/map/us-states-map";
 import { StateListGrid } from "@/components/destinations/state-list-grid";
 import type { Metadata } from "next";
@@ -8,14 +8,23 @@ import type { Metadata } from "next";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Browse Destinations",
+  title: "Fishing Destinations - Party Boat Charters by State | PartyBoatsUSA",
   description:
     "Explore party boat fishing destinations across the United States. Find charters by state and city.",
   alternates: { canonical: "/destinations" },
 };
 
 export default async function DestinationsPage() {
-  const statesData = await getAllStatesWithBoatCounts();
+  const [statesData, speciesByState] = await Promise.all([
+    getAllStatesWithBoatCounts(),
+    getTopSpeciesByState(5),
+  ]);
+
+  // Serialize the Map for the client component
+  const speciesMap: Record<string, { name: string; slug: string; imageUrl: string | null }[]> = {};
+  for (const [code, speciesList] of speciesByState) {
+    speciesMap[code] = speciesList;
+  }
 
   const mapData = statesData.map((s) => ({
     code: s.code,
@@ -44,7 +53,7 @@ export default async function DestinationsPage() {
       <section className="bg-primary text-white py-10">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-2xl md:text-4xl font-display font-bold mb-3">
-            Browse Destinations
+            Fishing Destinations
           </h1>
           <p className="text-blue-100 max-w-2xl mx-auto mb-6">
             Explore party boat fishing destinations across the United States.
@@ -78,7 +87,7 @@ export default async function DestinationsPage() {
         <h2 className="text-xl font-display font-bold mb-4 md:mb-6">
           All Destinations
         </h2>
-        <StateListGrid states={mapData} />
+        <StateListGrid states={mapData} speciesByState={speciesMap} />
       </section>
 
       {/* BreadcrumbList JSON-LD */}

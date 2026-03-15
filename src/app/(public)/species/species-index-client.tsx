@@ -3,13 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Fish, Search, ChevronRight } from "lucide-react";
+import { Fish, Search, ChevronRight, Ship, MapPin, Ruler } from "lucide-react";
 
 interface SpeciesItem {
   id: number;
   name: string;
   slug: string;
   scientificName: string | null;
+  description: string | null;
+  habitat: string | null;
+  sizeRange: string | null;
+  fightRating: string | null;
   imageUrl: string | null;
   categoryId: number | null;
   categoryName: string | null;
@@ -113,7 +117,7 @@ export function SpeciesIndexClient({
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary ml-auto" />
                 </Link>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {catSpecies.map((sp) => (
                     <SpeciesCard key={sp.id} species={sp} />
                   ))}
@@ -125,7 +129,7 @@ export function SpeciesIndexClient({
           {species.filter((s) => !s.categoryId).length > 0 && (
             <div>
               <h2 className="text-xl font-display font-bold mb-4 border-b pb-2">Other Species</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {species.filter((s) => !s.categoryId).map((sp) => (
                   <SpeciesCard key={sp.id} species={sp} />
                 ))}
@@ -135,7 +139,7 @@ export function SpeciesIndexClient({
         </div>
       ) : (
         // Flat filtered list
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((sp) => (
             <SpeciesCard key={sp.id} species={sp} />
           ))}
@@ -154,37 +158,46 @@ function SpeciesCard({ species }: { species: SpeciesItem }) {
   return (
     <Link
       href={`/species/${species.slug}`}
-      className="group flex items-center gap-4 p-4 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+      className="group flex items-center gap-3 p-3 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
     >
       {species.imageUrl ? (
-        <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden bg-gray-50">
-          <Image
-            src={species.imageUrl}
-            alt={species.name}
-            width={44}
-            height={44}
-            className="w-full h-full object-contain"
-          />
-        </div>
+        <Image
+          src={species.imageUrl}
+          alt={species.name}
+          width={120}
+          height={80}
+          className="flex-shrink-0 w-[120px] h-[80px] object-contain group-hover:scale-105 transition-transform"
+        />
       ) : (
-        <div className="flex-shrink-0 w-11 h-11 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-          <Fish className="h-5 w-5 text-primary" />
-        </div>
+        <Fish className="flex-shrink-0 w-[120px] h-[80px] p-5 text-muted-foreground" />
       )}
       <div className="flex-1 min-w-0">
-        <h3 className="font-display font-semibold group-hover:text-primary transition-colors">
+        <h3 className="font-display font-semibold text-sm group-hover:text-primary transition-colors">
           {species.name}
         </h3>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {species.scientificName && (
-            <span className="italic text-xs truncate">{species.scientificName}</span>
-          )}
-          {species.boatCount > 0 && (
-            <span className="text-xs">
-              {species.boatCount} {species.boatCount === 1 ? "boat" : "boats"}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-muted-foreground">
+          {species.habitat && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+              {species.habitat}
             </span>
           )}
+          {species.sizeRange && (
+            <span className="flex items-center gap-1">
+              <Ruler className="h-2.5 w-2.5 flex-shrink-0" />
+              {species.sizeRange}
+            </span>
+          )}
+          <span className="flex items-center gap-1">
+            <Ship className="h-2.5 w-2.5 flex-shrink-0" />
+            {species.boatCount} {species.boatCount === 1 ? "charter" : "charters"}
+          </span>
         </div>
+        {species.description && (
+          <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+            {species.description}
+          </p>
+        )}
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
     </Link>

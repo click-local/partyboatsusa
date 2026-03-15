@@ -423,6 +423,9 @@ export async function getAllSpeciesWithBoatCounts() {
         sortOrder: species.sortOrder,
         scientificName: species.scientificName,
         description: species.description,
+        habitat: species.habitat,
+        sizeRange: species.sizeRange,
+        fightRating: species.fightRating,
         imageUrl: species.imageUrl,
         categoryId: species.categoryId,
         categoryName: speciesCategories.name,
@@ -433,8 +436,34 @@ export async function getAllSpeciesWithBoatCounts() {
       .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
       .leftJoin(boatSpecies, eq(boatSpecies.speciesId, species.id))
       .leftJoin(boats, eq(boatSpecies.boatId, boats.id))
-      .groupBy(species.id, species.name, species.slug, species.sortOrder, species.scientificName, species.description, species.imageUrl, species.categoryId, speciesCategories.name, speciesCategories.slug)
+      .groupBy(species.id, species.name, species.slug, species.sortOrder, species.scientificName, species.description, species.habitat, species.sizeRange, species.fightRating, species.imageUrl, species.categoryId, speciesCategories.name, speciesCategories.slug, speciesCategories.sortOrder)
+      .having(sql`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END) > 0`)
       .orderBy(speciesCategories.sortOrder, species.name);
+  } catch {
+    return [];
+  }
+}
+
+export async function getPopularSpecies(limit = 8) {
+  try {
+    const rows = await db
+      .select({
+        id: species.id,
+        name: species.name,
+        slug: species.slug,
+        imageUrl: species.imageUrl,
+        categoryName: speciesCategories.name,
+        boatCount: sql<number>`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END)`.as("boat_count"),
+      })
+      .from(species)
+      .leftJoin(speciesCategories, eq(species.categoryId, speciesCategories.id))
+      .leftJoin(boatSpecies, eq(boatSpecies.speciesId, species.id))
+      .leftJoin(boats, eq(boatSpecies.boatId, boats.id))
+      .groupBy(species.id, species.name, species.slug, species.imageUrl, speciesCategories.name)
+      .having(sql`count(DISTINCT CASE WHEN ${boats.isPublished} = true THEN ${boatSpecies.boatId} END) > 0`)
+      .orderBy(sql`boat_count DESC`)
+      .limit(limit);
+    return rows;
   } catch {
     return [];
   }

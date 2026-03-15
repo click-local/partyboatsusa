@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Search, MapPin, ArrowRight, Users } from "lucide-react";
+import { Search, MapPin, ArrowRight, Users, Fish } from "lucide-react";
 import { db } from "@/lib/db";
 import { siteSettings, boats, bragBoardPhotos, destinationPages, states } from "@/lib/db/schema";
 import { desc, eq, and, inArray } from "drizzle-orm";
-import { getFeaturedBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
+import { getFeaturedBoats, getTierBadgesForBoats, getPopularSpecies } from "@/lib/db/queries/boats";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -29,9 +29,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [settingsRows, featuredBoats, latestCatches, destPages] = await Promise.all([
+  const [settingsRows, featuredBoats, popularSpecies, latestCatches, destPages] = await Promise.all([
     db.select().from(siteSettings).limit(1),
     getFeaturedBoats(9),
+    getPopularSpecies(8),
     db.select({
       id: bragBoardPhotos.id,
       photoUrl: bragBoardPhotos.photoUrl,
@@ -244,6 +245,61 @@ export default async function Home() {
                 className="text-primary font-medium hover:underline"
               >
                 View All Photos →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Popular Target Species */}
+      {popularSpecies.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-4">
+              Popular Target Species
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
+              Browse party boat charters by the fish you want to catch
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {popularSpecies.map((sp) => (
+                <Link
+                  key={sp.id}
+                  href={`/species/${sp.slug}`}
+                  className="group flex items-center gap-3 p-4 bg-gray-50 rounded-xl border hover:shadow-md hover:border-primary/30 transition-all"
+                >
+                  {sp.imageUrl ? (
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-white">
+                      <Image
+                        src={sp.imageUrl}
+                        alt={sp.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Fish className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h3 className="font-display font-semibold text-sm group-hover:text-primary transition-colors truncate">
+                      {sp.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {sp.boatCount} {sp.boatCount === 1 ? "charter" : "charters"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-10">
+              <Link
+                href="/species"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
+                View All Species <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { boats, states, cities, destinationPages, tripTypes } from "@/lib/db/schema";
+import { boats, states, destinationPages, tripTypes } from "@/lib/db/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { getAllSpeciesWithBoatCounts, getAllSpeciesStateCombinations } from "@/lib/db/queries/boats";
 
@@ -77,30 +77,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not connected yet
   }
 
-  // City pages
-  let cityPages: MetadataRoute.Sitemap = [];
-  try {
-    const allCities = await db.select({ slug: cities.slug }).from(cities);
-
-    const latestCityDestUpdate = await db
-      .select({ updatedAt: destinationPages.updatedAt })
-      .from(destinationPages)
-      .where(eq(destinationPages.type, "city"))
-      .orderBy(desc(destinationPages.updatedAt))
-      .limit(1);
-
-    const cityLastMod = latestCityDestUpdate[0]?.updatedAt || now;
-
-    cityPages = allCities.map((city) => ({
-      url: `${SITE_URL}/locations/${city.slug}`,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-      lastModified: cityLastMod,
-    }));
-  } catch {
-    // DB not connected yet
-  }
-
   // Trip type pages
   let tripTypePages: MetadataRoute.Sitemap = [];
   try {
@@ -154,5 +130,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not connected yet
   }
 
-  return [...staticPages, ...boatPages, ...statePages, ...cityPages, ...tripTypePages, ...speciesPages, ...speciesStatePages];
+  return [...staticPages, ...boatPages, ...statePages, ...tripTypePages, ...speciesPages, ...speciesStatePages];
 }

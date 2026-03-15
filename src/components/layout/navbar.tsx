@@ -10,20 +10,16 @@ import {
   Anchor,
   X,
   MapPin,
-  HelpCircle,
-  Users,
   MessageCircle,
   Fish,
-  Info,
+  Camera,
 } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/search", label: "Browse Boats", icon: Search },
-  { href: "/destinations", label: "Browse Destinations", icon: MapPin },
-  { href: "/how-it-works", label: "How it Works", icon: Info },
-  { href: "/about", label: "About", icon: Users },
-  { href: "/faq", label: "FAQ", icon: HelpCircle },
-  { href: "/brag-board", label: "Brag Board", icon: Fish },
+  { href: "/destinations", label: "Destinations", icon: MapPin },
+  { href: "/species", label: "Fish Species", icon: Fish },
+  { href: "/brag-board", label: "Brag Board", icon: Camera },
   { href: "/contact", label: "Contact", icon: MessageCircle },
 ];
 

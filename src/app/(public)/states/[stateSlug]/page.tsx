@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, MapPin } from "lucide-react";
-import { LinkButton } from "@/components/link-button";
+import { ChevronRight } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
-import { getStateBySlug, getCitiesByState } from "@/lib/db/queries/states";
+import { getStateBySlug } from "@/lib/db/queries/states";
 import { getBoatsByState, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-pages";
 import { formatImageUrl } from "@/lib/utils";
@@ -71,10 +70,9 @@ export default async function StatePage({ params, searchParams }: Props) {
   const state = await getStateBySlug(stateSlug);
   if (!state) notFound();
 
-  const [destPage, boatData, cities] = await Promise.all([
+  const [destPage, boatData] = await Promise.all([
     getDestinationPageByStateSlug(stateSlug),
     getBoatsByState(state.code, currentPage, 50),
-    getCitiesByState(state.code),
   ]);
 
   const tierBadges = await getTierBadgesForBoats(boatData.boats.map((b) => b.operatorId));
@@ -150,23 +148,6 @@ export default async function StatePage({ params, searchParams }: Props) {
       })()}
 
       <div className="container mx-auto px-4 py-12">
-        {/* Popular Cities -always at top */}
-        {cities.length > 0 && (
-          <section className="mb-12">
-            <h2 className="text-2xl font-display font-bold mb-4">
-              Popular Cities in {state.name}
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {cities.map((city) => (
-                <LinkButton key={city.id} href={`/locations/${city.slug}`} variant="outline" size="sm" className="gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {city.name}
-                </LinkButton>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Content Blocks (boats blocks render inline with boat data) */}
         {destPage?.blocks && destPage.blocks.length > 0 && (
           <div className="mb-12 space-y-8">

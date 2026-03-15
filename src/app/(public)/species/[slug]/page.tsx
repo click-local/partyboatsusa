@@ -7,6 +7,7 @@ import { BoatCard } from "@/components/boat-card";
 import { SpeciesBoatExplorer } from "@/components/species-boat-explorer";
 import { getBoatsBySpecies, getStatesForSpecies, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getBragBoardPhotosBySpecies } from "@/lib/db/queries/brag-board";
+import { getTopSpeciesByState } from "@/lib/db/queries/states";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -51,10 +52,11 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
   if (!data) notFound();
 
   const { species: sp, aliases } = data;
-  const [tierBadges, statesList, bragPhotos] = await Promise.all([
+  const [tierBadges, statesList, bragPhotos, speciesByStateMap] = await Promise.all([
     getTierBadgesForBoats(data.boats.map((b) => b.operatorId)),
     getStatesForSpecies(slug),
     getBragBoardPhotosBySpecies(sp.id, 8),
+    getTopSpeciesByState(5),
   ]);
 
   // Prepare data for the explorer component (all boats for map)
@@ -300,33 +302,72 @@ export default async function SpeciesDetailPage({ params, searchParams }: Props)
             <h2 className="text-lg font-display font-bold mb-4">
               {sp.name} Fishing by State
             </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-              {statesList.map((s) => (
-                <Link
-                  key={s.stateSlug}
-                  href={`/species/${slug}/${s.stateSlug}`}
-                  className="group relative rounded-lg overflow-hidden border hover:shadow-md transition-all"
-                >
-                  <div className="aspect-[3/2] relative">
-                    <Image
-                      src={`https://flagcdn.com/w160/us-${s.stateCode.toLowerCase()}.png`}
-                      alt={`${s.stateName} flag`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 12.5vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                    <div className="absolute bottom-0 inset-x-0 p-2">
-                      <p className="text-white font-semibold text-xs drop-shadow-sm truncate">
-                        {s.stateName}
-                      </p>
-                      <p className="text-white/80 text-[10px]">
-                        {s.boatCount} {s.boatCount === 1 ? "boat" : "boats"}
-                      </p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {statesList.map((s) => {
+                const topSpecies = speciesByStateMap.get(s.stateCode) || [];
+                return (
+                  <div
+                    key={s.stateSlug}
+                    className="bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <Link
+                      href={`/species/${slug}/${s.stateSlug}`}
+                      className="group flex items-center gap-4 p-4 pb-3"
+                    >
+                      <div className="flex-shrink-0 w-14 h-10 rounded overflow-hidden border border-gray-200 shadow-sm">
+                        <Image
+                          src={`https://flagcdn.com/w160/us-${s.stateCode.toLowerCase()}.png`}
+                          alt={`${s.stateName} flag`}
+                          width={56}
+                          height={40}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">
+                          {s.stateName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {s.boatCount} {s.boatCount === 1 ? "charter" : "charters"}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                    </Link>
+                    {topSpecies.length > 0 && (
+                      <div className="px-4 pb-4">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
+                          Popular Species
+                        </p>
+                        <div className="flex gap-5 overflow-x-auto pb-1 scrollbar-hide">
+                          {topSpecies.map((tsp) => (
+                            <Link
+                              key={tsp.slug}
+                              href={`/species/${tsp.slug}/${s.stateSlug}`}
+                              className="group/sp flex flex-col items-center gap-1.5 flex-shrink-0"
+                              title={tsp.name}
+                            >
+                              {tsp.imageUrl ? (
+                                <Image
+                                  src={tsp.imageUrl}
+                                  alt={tsp.name}
+                                  width={72}
+                                  height={72}
+                                  className="w-[72px] h-[72px] object-contain group-hover/sp:scale-110 transition-transform"
+                                />
+                              ) : (
+                                <Fish className="w-[72px] h-[72px] p-4 text-muted-foreground" />
+                              )}
+                              <span className="text-xs text-muted-foreground text-center leading-tight max-w-[80px] group-hover/sp:text-primary transition-colors">
+                                {tsp.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
