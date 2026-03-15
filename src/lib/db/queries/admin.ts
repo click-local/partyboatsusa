@@ -2,12 +2,12 @@ import { db } from "@/lib/db";
 import {
   boats, operators, membershipTiers, boatAmenities, boatTripTypes, boatSpecies,
   amenities, tripTypes, species, speciesCategories, speciesAliases, speciesSuggestions,
-  states, cities, reviews, bragBoardPhotos,
+  states, cities, reviews, bragBoardPhotos, bragBoardPhotoSpecies,
   boatSubmissions, claimRequests, destinationPages, contentBlocks,
   siteSettings, emailTemplates, featureComparisonItems, featureTierValues,
   operatorContactLogs, pageSeoSettings,
 } from "@/lib/db/schema";
-import { eq, desc, asc, sql, and, isNull } from "drizzle-orm";
+import { eq, desc, asc, sql, and, isNull, inArray } from "drizzle-orm";
 
 // ===== BOATS =====
 export async function adminGetBoats() {
@@ -608,6 +608,75 @@ export async function adminUpdateBragBoardPhoto(
     .set({ status })
     .where(eq(bragBoardPhotos.id, photoId))
     .returning();
+
+  return updated;
+}
+
+export async function adminGetBragBoardPhotoSpecies(photoIds: number[]) {
+  if (photoIds.length === 0) return new Map<number, { id: number; name: string }[]>();
+
+  const rows = await db
+    .select({
+      photoId: bragBoardPhotoSpecies.photoId,
+      speciesId: species.id,
+      speciesName: species.name,
+    })
+    .from(bragBoardPhotoSpecies)
+    .innerJoin(species, eq(bragBoardPhotoSpecies.speciesId, species.id))
+    .where(inArray(bragBoardPhotoSpecies.photoId, photoIds));
+
+  const map = new Map<number, { id: number; name: string }[]>();
+  for (const row of rows) {
+    const existing = map.get(row.photoId) || [];
+    existing.push({ id: row.speciesId, name: row.speciesName });
+    map.set(row.photoId, existing);
+  }
+  return map;
+}
+
+export async function adminUpdateBragBoardPhotoDetails(
+  photoId: number,
+  data: {
+    catchDescription?: string;
+    submitterName?: string;
+    boatId?: number;
+    speciesIds?: number[];
+  }
+) {
+  const { speciesIds, ...photoFields } = data;
+
+  // Update photo fields if any provided
+  const hasFields = Object.keys(photoFields).length > 0;
+  let updated;
+  if (hasFields) {
+    const [result] = await db
+      .update(bragBoardPhotos)
+      .set(photoFields)
+      .where(eq(bragBoardPhotos.id, photoId))
+      .returning();
+    updated = result;
+  } else {
+    const [result] = await db
+      .select()
+      .from(bragBoardPhotos)
+      .where(eq(bragBoardPhotos.id, photoId));
+    updated = result;
+  }
+
+  if (!updated) return null;
+
+  // Update species if provided
+  if (speciesIds !== undefined) {
+    await db
+      .delete(bragBoardPhotoSpecies)
+      .where(eq(bragBoardPhotoSpecies.photoId, photoId));
+
+    if (speciesIds.length > 0) {
+      await db.insert(bragBoardPhotoSpecies).values(
+        speciesIds.map((speciesId) => ({ photoId, speciesId }))
+      );
+    }
+  }
 
   return updated;
 }

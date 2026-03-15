@@ -84,6 +84,17 @@ export const speciesStateContent = pgTable("species_state_content", {
 
 export type SelectSpeciesStateContent = typeof speciesStateContent.$inferSelect;
 
+export const speciesStateSeasons = pgTable("species_state_seasons", {
+  id: serial("id").primaryKey(),
+  speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
+  stateCode: text("state_code").notNull(),
+  month: integer("month").notNull(),
+  rating: text("rating").notNull(),
+  notes: text("notes"),
+});
+
+export type SelectSpeciesStateSeason = typeof speciesStateSeasons.$inferSelect;
+
 export const speciesAliases = pgTable("species_aliases", {
   id: serial("id").primaryKey(),
   speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
@@ -279,6 +290,12 @@ export const bragBoardPhotos = pgTable("brag_board_photos", {
 export const insertBragBoardPhotoSchema = createInsertSchema(bragBoardPhotos).omit({ id: true, submittedAt: true, status: true });
 export type InsertBragBoardPhoto = z.infer<typeof insertBragBoardPhotoSchema>;
 export type SelectBragBoardPhoto = typeof bragBoardPhotos.$inferSelect;
+
+export const bragBoardPhotoSpecies = pgTable("brag_board_photo_species", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").notNull().references(() => bragBoardPhotos.id, { onDelete: "cascade" }),
+  speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
+});
 
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),

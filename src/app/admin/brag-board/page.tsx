@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { Camera, CheckCircle, XCircle, Loader2, Clock } from "lucide-react";
+import {
+  Camera, CheckCircle, XCircle, Loader2, Clock, Pencil, X, Save,
+} from "lucide-react";
 import { toast } from "sonner";
+
+interface SpeciesTag {
+  id: number;
+  name: string;
+}
 
 interface Photo {
   id: number;
@@ -16,6 +23,12 @@ interface Photo {
   catchDescription: string;
   status: string;
   submittedAt: string;
+  species: SpeciesTag[];
+}
+
+interface AllSpecies {
+  id: number;
+  name: string;
 }
 
 export default function AdminBragBoardPage() {
@@ -23,6 +36,7 @@ export default function AdminBragBoardPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [acting, setActing] = useState<number | null>(null);
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/brag-board/photos")
@@ -66,6 +80,11 @@ export default function AdminBragBoardPage() {
     } finally {
       setActing(null);
     }
+  }
+
+  function handleSaveEdit(updated: Photo) {
+    setPhotos((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setEditingPhoto(null);
   }
 
   const filtered = filter === "all" ? photos : photos.filter((p) => p.status === filter);
@@ -139,11 +158,35 @@ export default function AdminBragBoardPage() {
                   <p className="font-medium text-sm text-gray-900 truncate">
                     {photo.boatName}
                   </p>
-                  <StatusBadge status={photo.status} />
+                  <div className="flex items-center gap-1.5">
+                    <StatusBadge status={photo.status} />
+                    <button
+                      onClick={() => setEditingPhoto(photo)}
+                      className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
+                      title="Edit photo"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-600 line-clamp-2">
                   {photo.catchDescription}
                 </p>
+                {photo.species.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {photo.species.map((s) => (
+                      <span
+                        key={s.id}
+                        className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded"
+                      >
+                        {s.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {photo.species.length === 0 && (
+                  <p className="text-[10px] text-amber-600 font-medium">No species tagged</p>
+                )}
                 <div className="text-xs text-gray-500">
                   <p>By: {photo.submitterName}</p>
                   <p>{new Date(photo.submittedAt).toLocaleDateString()}</p>
@@ -177,6 +220,281 @@ export default function AdminBragBoardPage() {
           ))}
         </div>
       )}
+
+      {/* Edit Modal */}
+      {editingPhoto && (
+        <EditPhotoModal
+          photo={editingPhoto}
+          onClose={() => setEditingPhoto(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditPhotoModal({
+  photo,
+  onClose,
+  onSave,
+}: {
+  photo: Photo;
+  onClose: () => void;
+  onSave: (updated: Photo) => void;
+}) {
+  const [catchDescription, setCatchDescription] = useState(photo.catchDescription);
+  const [submitterName, setSubmitterName] = useState(photo.submitterName);
+  const [selectedSpecies, setSelectedSpecies] = useState<SpeciesTag[]>(photo.species);
+  const [allSpecies, setAllSpecies] = useState<AllSpecies[]>([]);
+  const [speciesSearch, setSpeciesSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadingSpecies, setLoadingSpecies] = useState(true);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/species/search")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = (data.species || []).map((s: AllSpecies) => ({
+          id: s.id,
+          name: s.name,
+        }));
+        setAllSpecies(list);
+      })
+      .catch(() => toast.error("Failed to load species"))
+      .finally(() => setLoadingSpecies(false));
+  }, []);
+
+  const filteredSpecies = speciesSearch
+    ? allSpecies.filter((s) =>
+        s.name.toLowerCase().includes(speciesSearch.toLowerCase())
+      )
+    : allSpecies;
+
+  const selectedIds = new Set(selectedSpecies.map((s) => s.id));
+
+  function toggleSpecies(sp: AllSpecies) {
+    if (selectedIds.has(sp.id)) {
+      setSelectedSpecies((prev) => prev.filter((s) => s.id !== sp.id));
+    } else {
+      setSelectedSpecies((prev) => [...prev, { id: sp.id, name: sp.name }]);
+    }
+    setSpeciesSearch("");
+  }
+
+  function removeSpecies(id: number) {
+    setSelectedSpecies((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  async function handleSave() {
+    if (!catchDescription.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!submitterName.trim()) {
+      toast.error("Submitter name is required");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/brag-board/photos", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photoId: photo.id,
+          catchDescription: catchDescription.trim(),
+          submitterName: submitterName.trim(),
+          speciesIds: selectedSpecies.map((s) => s.id),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to save");
+        return;
+      }
+
+      onSave({
+        ...photo,
+        catchDescription: catchDescription.trim(),
+        submitterName: submitterName.trim(),
+        species: selectedSpecies,
+      });
+      toast.success("Photo updated");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Pencil className="h-5 w-5 text-blue-600" />
+            Edit Brag Board Photo
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Photo Preview */}
+          <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-sm">
+            <Image
+              src={photo.photoUrl}
+              alt={photo.catchDescription}
+              fill
+              className="object-cover"
+              sizes="384px"
+            />
+          </div>
+
+          <div className="text-xs text-gray-500">
+            Boat: <span className="font-medium text-gray-700">{photo.boatName}</span>
+            {" | "}Submitted: {new Date(photo.submittedAt).toLocaleDateString()}
+            {" | "}Status: <StatusBadge status={photo.status} />
+          </div>
+
+          {/* Submitter Name */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Submitter Name</label>
+            <input
+              type="text"
+              value={submitterName}
+              onChange={(e) => setSubmitterName(e.target.value)}
+              className="w-full border rounded-md px-3 py-2 text-sm"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Catch Description</label>
+            <textarea
+              value={catchDescription}
+              onChange={(e) => setCatchDescription(e.target.value)}
+              rows={3}
+              className="w-full border rounded-md px-3 py-2 text-sm resize-y"
+            />
+          </div>
+
+          {/* Species */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Species</label>
+
+            {/* Selected species chips */}
+            {selectedSpecies.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {selectedSpecies.map((sp) => (
+                  <span
+                    key={sp.id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full"
+                  >
+                    {sp.name}
+                    <button
+                      type="button"
+                      onClick={() => removeSpecies(sp.id)}
+                      className="hover:text-red-600 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {loadingSpecies ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading species...
+              </div>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
+                <input
+                  type="text"
+                  placeholder="Search species to add..."
+                  value={speciesSearch}
+                  onChange={(e) => {
+                    setSpeciesSearch(e.target.value);
+                    setDropdownOpen(true);
+                  }}
+                  onFocus={() => setDropdownOpen(true)}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                />
+                {dropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setDropdownOpen(false)}
+                    />
+                    <div className="absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredSpecies.length > 0 ? (
+                        filteredSpecies.map((s) => {
+                          const isSelected = selectedIds.has(s.id);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => toggleSpecies(s)}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                                isSelected
+                                  ? "bg-blue-50 text-blue-700 font-medium"
+                                  : ""
+                              }`}
+                            >
+                              {s.name}
+                              {isSelected && (
+                                <span className="text-blue-500 text-xs">
+                                  Selected
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <p className="px-3 py-2 text-sm text-gray-500">
+                          No species found
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2 border-t">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

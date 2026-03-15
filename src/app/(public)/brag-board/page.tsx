@@ -2,11 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Camera } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { BragBoardForm } from "@/components/brag-board-form";
+import { BragBoardFormDialog } from "@/components/brag-board-form-dialog";
+import { BragBoardFilters } from "@/components/brag-board-filters";
 import { getBragBoardPhotos } from "@/lib/db/queries/brag-board";
 import { db } from "@/lib/db";
-import { boats } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { boats, species, bragBoardPhotoSpecies, bragBoardPhotos, states } from "@/lib/db/schema";
+import { eq, asc, and } from "drizzle-orm";
 import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -20,14 +21,19 @@ export const metadata: Metadata = {
 };
 
 interface Props {
-  searchParams: Promise<{ boat?: string }>;
+  searchParams: Promise<{ boat?: string; state?: string; species?: string }>;
 }
 
 export default async function BragBoardPage({ searchParams }: Props) {
-  const { boat: boatParam } = await searchParams;
+  const { boat: boatParam, state: stateParam, species: speciesParam } = await searchParams;
 
-  const [{ photos, total }, boatsForSelect] = await Promise.all([
-    getBragBoardPhotos(1, 48),
+  const filters = {
+    stateCode: stateParam || undefined,
+    speciesId: speciesParam ? Number(speciesParam) : undefined,
+  };
+
+  const [{ photos, total }, boatsForSelect, speciesList, stateOptions] = await Promise.all([
+    getBragBoardPhotos(1, 48, filters),
     db
       .select({
         id: boats.id,
@@ -38,6 +44,22 @@ export default async function BragBoardPage({ searchParams }: Props) {
       .from(boats)
       .where(eq(boats.isPublished, true))
       .orderBy(asc(boats.name)),
+    db
+      .selectDistinct({ id: species.id, name: species.name })
+      .from(bragBoardPhotoSpecies)
+      .innerJoin(species, eq(bragBoardPhotoSpecies.speciesId, species.id))
+      .innerJoin(bragBoardPhotos, and(
+        eq(bragBoardPhotoSpecies.photoId, bragBoardPhotos.id),
+        eq(bragBoardPhotos.status, "approved")
+      ))
+      .orderBy(asc(species.name)),
+    db
+      .selectDistinct({ code: states.code, name: states.name })
+      .from(bragBoardPhotos)
+      .innerJoin(boats, eq(bragBoardPhotos.boatId, boats.id))
+      .innerJoin(states, eq(boats.stateCode, states.code))
+      .where(eq(bragBoardPhotos.status, "approved"))
+      .orderBy(asc(states.name)),
   ]);
 
   const preselectedBoatId = boatParam ? Number(boatParam) : undefined;
@@ -65,25 +87,31 @@ export default async function BragBoardPage({ searchParams }: Props) {
             Show off your best catches! Browse photos from anglers across the
             country or share your own party boat fishing memories.
           </p>
-          <a
-            href="#submit-your-catch"
-            className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors"
+          <BragBoardFormDialog
+            boats={boatsForSelect}
+            speciesList={speciesList}
+            preselectedBoatId={preselectedBoatId}
           >
-            <Camera className="h-4 w-4" />
-            Submit Your Catch
-          </a>
+            <span className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors">
+              <Camera className="h-4 w-4" />
+              Submit Your Catch
+            </span>
+          </BragBoardFormDialog>
         </div>
       </section>
 
-      {/* Photo Grid */}
+      {/* Filters + Photo Grid */}
       <section className="container mx-auto px-4 py-12">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <BragBoardFilters states={stateOptions} speciesList={speciesList} />
+          <p className="text-sm text-muted-foreground shrink-0">
+            {total} {total === 1 ? "photo" : "photos"}{(stateParam || speciesParam) ? " found" : " shared"}
+          </p>
+        </div>
         {photos.length > 0 ? (
           <>
-            <p className="text-sm text-muted-foreground mb-6">
-              {total} {total === 1 ? "photo" : "photos"} shared
-            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {photos.map(({ photo, boatName, boatSlug }) => (
+              {photos.map(({ photo, boatName, boatSlug, speciesNames }) => (
                 <Card key={photo.id} className="group overflow-hidden pt-0 gap-0">
                   <div className="relative aspect-square overflow-hidden bg-muted">
                     <Image
@@ -98,6 +126,18 @@ export default async function BragBoardPage({ searchParams }: Props) {
                     <p className="text-sm font-medium line-clamp-2 mb-1">
                       {photo.catchDescription}
                     </p>
+                    {speciesNames.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1.5">
+                        {speciesNames.map((name) => (
+                          <span
+                            key={name}
+                            className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{photo.submitterName}</span>
                       <Link
@@ -116,20 +156,22 @@ export default async function BragBoardPage({ searchParams }: Props) {
           <div className="text-center py-8">
             <Camera className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground">
-              No photos yet. Be the first to share your catch below!
+              No photos yet. Be the first to share your catch!
             </p>
+            <div className="mt-4">
+              <BragBoardFormDialog
+                boats={boatsForSelect}
+                speciesList={speciesList}
+                preselectedBoatId={preselectedBoatId}
+              >
+                <span className="inline-flex items-center justify-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors">
+                  <Camera className="h-4 w-4" />
+                  Submit Your Catch
+                </span>
+              </BragBoardFormDialog>
+            </div>
           </div>
         )}
-      </section>
-
-      {/* Submission Form */}
-      <section id="submit-your-catch" className="bg-gray-50 border-t py-12">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <BragBoardForm
-            boats={boatsForSelect}
-            preselectedBoatId={preselectedBoatId}
-          />
-        </div>
       </section>
     </>
   );

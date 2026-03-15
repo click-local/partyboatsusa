@@ -20,6 +20,7 @@ export const bragBoardSubmissionSchema = z.object({
   submitterEmail: z.string().email().max(255).optional().nullable().default(null),
   catchDescription: z.string().min(1).max(2000),
   photoUrl: z.string().url().max(2000),
+  speciesIds: z.array(z.coerce.number().int().positive()).min(1, "Select at least one species").max(10),
   honeypot: z.string().optional(),
   formLoadedAt: z.union([z.string(), z.number()]).optional(),
 });
@@ -174,6 +175,14 @@ export const adminBragBoardActionSchema = z.object({
   boatName: z.string().max(200).optional(),
   boatSlug: z.string().max(200).optional(),
   submitterName: z.string().max(100).optional(),
+});
+
+export const adminBragBoardEditSchema = z.object({
+  photoId: z.number().int().positive(),
+  catchDescription: z.string().min(1).max(2000).optional(),
+  submitterName: z.string().min(1).max(100).optional(),
+  boatId: z.number().int().positive().optional(),
+  speciesIds: z.array(z.coerce.number().int().positive()).max(10).optional(),
 });
 
 export const operatorReviewReplySchema = z.object({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bragBoardPhotos, boats } from "@/lib/db/schema";
+import { bragBoardPhotos, bragBoardPhotoSpecies, boats } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   sendBoatNotification,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
     }
 
-    const { boatId, submitterName, submitterEmail, catchDescription, photoUrl } = parsed.data;
+    const { boatId, submitterName, submitterEmail, catchDescription, photoUrl, speciesIds } = parsed.data;
 
     // Verify boat exists
     const [boat] = await db
@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
         catchDescription,
       })
       .returning();
+
+    // Insert species associations
+    if (speciesIds.length > 0) {
+      await db.insert(bragBoardPhotoSpecies).values(
+        speciesIds.map((speciesId) => ({ photoId: photo.id, speciesId }))
+      );
+    }
 
     // Send notification email (fire-and-forget)
     const recipient = await getBoatNotificationRecipient(boat.id);

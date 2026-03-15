@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
       { hostname: "partyboatsusa.com" },
       { hostname: "www.partyboatsusa.com" },
       { hostname: "zpphkvcmasdoyqtigwth.supabase.co" },
+      { hostname: "flagcdn.com" },
     ],
   },
   headers: async () => [

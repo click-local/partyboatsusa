@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { APIProvider, Map, Marker, InfoWindow } from "@vis.gl/react-google-maps";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Star, Users, ChevronDown, Navigation } from "lucide-react";
+import { MapPin, Star, Users, ChevronDown } from "lucide-react";
 import { formatImageUrl } from "@/lib/utils";
 
 interface BoatMarker {
@@ -102,7 +102,7 @@ export function SpeciesBoatExplorer({
       speciesId: String(speciesId),
       lat: String(userLocation.lat),
       lng: String(userLocation.lng),
-      limit: "5",
+      limit: "4",
     });
     if (stateCode) params.set("stateCode", stateCode);
 
@@ -150,12 +150,23 @@ export function SpeciesBoatExplorer({
   return (
     <section className="border-b">
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-bold text-lg">
+            Nearest Charters
+          </h2>
+          {loading && (
+            <span className="text-xs text-muted-foreground animate-pulse">Finding nearby...</span>
+          )}
+        </div>
+
+        {/* Map + Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Map */}
-          <div className="md:col-span-3">
+          <div>
             {API_KEY && allBoatMarkers.length > 0 ? (
               <APIProvider apiKey={API_KEY}>
-                <div className="w-full h-[300px] md:h-[450px] rounded-xl overflow-hidden border">
+                <div className="w-full h-[300px] md:h-full md:min-h-[400px] rounded-xl overflow-hidden border">
                   <Map
                     defaultCenter={mapCenter}
                     defaultZoom={defaultZoom}
@@ -210,7 +221,7 @@ export function SpeciesBoatExplorer({
                 </div>
               </APIProvider>
             ) : (
-              <div className="w-full h-[300px] md:h-[450px] rounded-xl border bg-gray-100 flex items-center justify-center">
+              <div className="w-full h-[300px] md:h-full md:min-h-[400px] rounded-xl border bg-gray-100 flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
                   <MapPin className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No boats with location data available</p>
@@ -219,113 +230,100 @@ export function SpeciesBoatExplorer({
             )}
           </div>
 
-          {/* Boat List */}
-          <div className="md:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display font-bold text-lg">
-                {locationStatus === "granted" ? (
-                  <>
-                    <Navigation className="inline h-4 w-4 mr-1.5 text-primary" />
-                    Nearest Charters
-                  </>
-                ) : (
-                  <>Top {speciesName} Charters</>
-                )}
-              </h2>
-              {loading && (
-                <span className="text-xs text-muted-foreground animate-pulse">Finding nearby...</span>
-              )}
-            </div>
+          {/* 2x2 Boat Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            {nearbyBoats.map((boat) => {
+              const imageUrl = formatImageUrl(boat.primaryImageUrl);
+              const rating = Number(boat.rating || 0);
+              const badge = boat.operatorId ? nearbyBadges[boat.operatorId] : undefined;
 
-            {locationStatus === "denied" && (
-              <p className="text-xs text-muted-foreground mb-3">
-                Allow location access to see boats nearest to you.
-              </p>
-            )}
-
-            <div className="space-y-3">
-              {nearbyBoats.map((boat) => {
-                const imageUrl = formatImageUrl(boat.primaryImageUrl);
-                const rating = Number(boat.rating || 0);
-                const badge = boat.operatorId ? nearbyBadges[boat.operatorId] : undefined;
-
-                return (
-                  <Link
-                    key={boat.id}
-                    href={`/boats/${boat.slug}`}
-                    className="flex gap-3 p-2 rounded-lg border hover:border-primary/50 hover:shadow-sm transition-all group"
-                  >
-                    <div className="relative w-20 h-16 rounded-md overflow-hidden bg-muted shrink-0">
-                      {boat.primaryImageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={boat.name}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                          style={{
-                            objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                          <MapPin className="h-4 w-4 text-primary/30" />
-                        </div>
+              return (
+                <Link
+                  key={boat.id}
+                  href={`/boats/${boat.slug}`}
+                  className="group bg-white rounded-xl overflow-hidden shadow-sm border hover:shadow-md transition-shadow flex flex-col"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+                    {boat.primaryImageUrl ? (
+                      <Image
+                        src={imageUrl}
+                        alt={boat.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 45vw, 24vw"
+                        style={{
+                          objectPosition: `${boat.imageFocalPointX}% ${boat.imageFocalPointY}%`,
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <MapPin className="h-8 w-8 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 left-2 flex gap-1">
+                      {(boat.isFeatured || boat.isFeaturedAdmin) && (
+                        <span className="px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-[10px] font-semibold rounded">
+                          Featured
+                        </span>
+                      )}
+                      {badge && (
+                        <span
+                          className="px-1.5 py-0.5 text-white text-[10px] font-semibold rounded"
+                          style={{ backgroundColor: badge.color }}
+                        >
+                          {badge.name}
+                        </span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                        {boat.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                        <span>{boat.cityName}, {boat.stateCode}</span>
-                        {rating > 0 && (
-                          <span className="inline-flex items-center gap-0.5 text-green-700">
-                            <Star className="h-3 w-3 fill-current" />
-                            {rating.toFixed(1)}
-                          </span>
-                        )}
-                        {badge && (
-                          <span
-                            className="px-1.5 py-0.5 text-white text-[10px] font-semibold rounded"
-                            style={{ backgroundColor: badge.color }}
-                          >
-                            {badge.name}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                          <Users className="h-3 w-3" /> Up to {boat.capacity}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                      <span className="text-white text-xs font-medium">
+                        {boat.cityName}, {boat.stateCode}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-3 flex flex-col flex-1">
+                    <h3 className="font-display font-semibold text-sm leading-tight truncate group-hover:text-primary transition-colors">
+                      {boat.name}
+                    </h3>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="h-3 w-3" /> Up to {boat.capacity}
+                      </span>
+                      {rating > 0 && (
+                        <span className="text-[10px] font-medium bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                          ★ {rating.toFixed(1)}
                         </span>
-                        <span className="text-xs font-semibold text-primary">
-                          {Number(boat.minPricePerPerson) > 0
-                            ? `From $${Number(boat.minPricePerPerson).toFixed(0)}/person`
-                            : "Call for pricing"}
-                        </span>
-                      </div>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-2 flex items-center justify-between">
+                      <span className="text-primary font-semibold text-xs">
+                        {Number(boat.minPricePerPerson) > 0
+                          ? `From $${Number(boat.minPricePerPerson).toFixed(0)}/person`
+                          : "Call for pricing"}
+                      </span>
                       {boat.distanceMiles != null && (
-                        <span className="text-[10px] text-blue-600 font-medium mt-0.5 block">
-                          {boat.distanceMiles} miles away
+                        <span className="text-[10px] text-blue-600 font-medium">
+                          {boat.distanceMiles} mi
                         </span>
                       )}
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {totalCount > 5 && (
-              <a
-                href="#all-boats"
-                className="mt-4 flex items-center justify-center gap-1 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                View All {totalCount} Charters
-                <ChevronDown className="h-4 w-4" />
-              </a>
-            )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
+
+        {/* View All */}
+        {totalCount > 4 && (
+          <a
+            href="#all-boats"
+            className="mt-4 flex items-center justify-center gap-1 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+          >
+            View All {totalCount} Charters
+            <ChevronDown className="h-4 w-4" />
+          </a>
+        )}
       </div>
     </section>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Upload, Loader2, CheckCircle, ImagePlus } from "lucide-react";
+import { Upload, Loader2, CheckCircle, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,12 +15,19 @@ interface BoatOption {
   stateCode: string;
 }
 
-interface BragBoardFormProps {
-  boats: BoatOption[];
-  preselectedBoatId?: number;
+interface SpeciesOption {
+  id: number;
+  name: string;
 }
 
-export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) {
+interface BragBoardFormProps {
+  boats: BoatOption[];
+  speciesList: SpeciesOption[];
+  preselectedBoatId?: number;
+  inDialog?: boolean;
+}
+
+export function BragBoardForm({ boats, speciesList, preselectedBoatId, inDialog }: BragBoardFormProps) {
   const [formLoadedAt] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -28,7 +35,11 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
   const [photoPreview, setPhotoPreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [boatSearch, setBoatSearch] = useState("");
+  const [speciesSearch, setSpeciesSearch] = useState("");
+  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<number[]>([]);
+  const [speciesDropdownOpen, setSpeciesDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const speciesRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     boatId: preselectedBoatId ? String(preselectedBoatId) : "",
@@ -45,6 +56,22 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
           b.cityName.toLowerCase().includes(boatSearch.toLowerCase())
       )
     : boats;
+
+  const filteredSpecies = speciesSearch
+    ? speciesList.filter((s) =>
+        s.name.toLowerCase().includes(speciesSearch.toLowerCase())
+      )
+    : speciesList;
+
+  function toggleSpecies(id: number) {
+    setSelectedSpeciesIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  }
+
+  function removeSpecies(id: number) {
+    setSelectedSpeciesIds((prev) => prev.filter((s) => s !== id));
+  }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -105,6 +132,10 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
       toast.error("Please describe your catch");
       return;
     }
+    if (selectedSpeciesIds.length === 0) {
+      toast.error("Please select at least one species");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -117,6 +148,7 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
           submitterEmail: formData.submitterEmail.trim() || null,
           catchDescription: formData.catchDescription.trim(),
           photoUrl,
+          speciesIds: selectedSpeciesIds,
           honeypot: formData.honeypot,
           formLoadedAt,
         }),
@@ -138,7 +170,7 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
 
   if (submitted) {
     return (
-      <div className="bg-white border rounded-xl p-8 text-center space-y-3">
+      <div className={inDialog ? "py-4 text-center space-y-3" : "bg-white border rounded-xl p-8 text-center space-y-3"}>
         <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
         <h3 className="text-xl font-display font-bold">Photo Submitted!</h3>
         <p className="text-muted-foreground text-sm">
@@ -151,6 +183,8 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
             setSubmitted(false);
             setPhotoUrl("");
             setPhotoPreview("");
+            setSelectedSpeciesIds([]);
+            setSpeciesSearch("");
             setFormData({
               boatId: preselectedBoatId ? String(preselectedBoatId) : "",
               submitterName: "",
@@ -167,13 +201,15 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
   }
 
   return (
-    <div className="bg-white border rounded-xl p-6 space-y-5">
-      <div>
-        <h3 className="text-xl font-display font-bold">Submit Your Catch</h3>
-        <p className="text-muted-foreground text-sm mt-1">
-          Share your best party boat fishing photo with the community
-        </p>
-      </div>
+    <div className={inDialog ? "space-y-4" : "bg-white border rounded-xl p-6 space-y-5"}>
+      {!inDialog && (
+        <div>
+          <h3 className="text-xl font-display font-bold">Submit Your Catch</h3>
+          <p className="text-muted-foreground text-sm mt-1">
+            Share your best party boat fishing photo with the community
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Honeypot */}
@@ -320,6 +356,89 @@ export function BragBoardForm({ boats, preselectedBoatId }: BragBoardFormProps) 
             }
             placeholder="What did you catch? Tell us about your trip!"
           />
+        </div>
+
+        {/* Species Multi-Select */}
+        <div ref={speciesRef}>
+          <label className="text-sm font-medium mb-1.5 block">
+            What species are in this photo? <span className="text-red-500">*</span>
+          </label>
+
+          {/* Selected species chips */}
+          {selectedSpeciesIds.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {selectedSpeciesIds.map((id) => {
+                const sp = speciesList.find((s) => s.id === id);
+                if (!sp) return null;
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
+                  >
+                    {sp.name}
+                    <button
+                      type="button"
+                      onClick={() => removeSpecies(id)}
+                      className="hover:text-red-600 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Search + dropdown */}
+          <div className="relative">
+            <Input
+              placeholder="Search species..."
+              value={speciesSearch}
+              onChange={(e) => {
+                setSpeciesSearch(e.target.value);
+                setSpeciesDropdownOpen(true);
+              }}
+              onFocus={() => setSpeciesDropdownOpen(true)}
+            />
+            {speciesDropdownOpen && (
+              <>
+                {/* Click-away overlay */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setSpeciesDropdownOpen(false)}
+                />
+                <div className="absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredSpecies.length > 0 ? (
+                    filteredSpecies.map((s) => {
+                      const isSelected = selectedSpeciesIds.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            toggleSpecies(s.id);
+                            setSpeciesSearch("");
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                            isSelected ? "bg-primary/5 text-primary font-medium" : ""
+                          }`}
+                        >
+                          {s.name}
+                          {isSelected && (
+                            <span className="text-primary text-xs">Selected</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">
+                      No species found
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <Button

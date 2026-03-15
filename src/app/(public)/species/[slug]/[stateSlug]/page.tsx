@@ -1,13 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Fish, MapPin, Tag, Calendar, Anchor } from "lucide-react";
+import { ChevronRight, Fish, MapPin, Tag, Calendar, Anchor, Camera } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { BoatCard } from "@/components/boat-card";
 import { SpeciesBoatExplorer } from "@/components/species-boat-explorer";
 import { getBoatsBySpeciesAndState, getAllSpeciesStateCombinations, getTierBadgesForBoats } from "@/lib/db/queries/boats";
+import { getBragBoardPhotosBySpecies } from "@/lib/db/queries/brag-board";
+import { getSpeciesStateSeasons } from "@/lib/db/queries/seasons";
+import { FishingSeasonCalendar } from "@/components/fishing-season-calendar";
+import { formatImageUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
+const GRID_PAGE_SIZE = 9;
 
 export const revalidate = 1800;
 
@@ -52,13 +58,18 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
   const { page: pageParam } = await searchParams;
   const currentPage = Math.max(1, Number(pageParam) || 1);
 
-  const data = await getBoatsBySpeciesAndState(slug, stateSlug, currentPage, 50);
+  // Fetch all boats for map markers; paginate the grid display
+  const data = await getBoatsBySpeciesAndState(slug, stateSlug, 1, 500);
   if (!data) notFound();
 
   const { species: sp, state: st, stateContent, aliases, otherStates } = data;
-  const tierBadges = await getTierBadgesForBoats(data.boats.map((b) => b.operatorId));
+  const [tierBadges, bragPhotos, seasonData] = await Promise.all([
+    getTierBadgesForBoats(data.boats.map((b) => b.operatorId)),
+    getBragBoardPhotosBySpecies(sp.id, 8),
+    getSpeciesStateSeasons(sp.id, st.code),
+  ]);
 
-  // Prepare data for the explorer component
+  // Prepare data for the explorer component (all boats for map)
   const allBoatMarkers = data.boats
     .filter((b) => b.latitude && b.longitude)
     .map((b) => ({
@@ -70,7 +81,7 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
       cityName: b.cityName,
     }));
 
-  const fallbackBoats = data.boats.slice(0, 5).map((b) => ({
+  const fallbackBoats = data.boats.slice(0, 4).map((b) => ({
     id: b.id,
     name: b.name,
     slug: b.slug,
@@ -93,6 +104,11 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
 
   const tierBadgesObj: Record<number, { name: string; color: string }> = {};
   tierBadges.forEach((v, k) => { tierBadgesObj[k] = v; });
+
+  // Grid pagination (from the full boats array)
+  const totalGridPages = Math.ceil(data.total / GRID_PAGE_SIZE);
+  const gridStart = (currentPage - 1) * GRID_PAGE_SIZE;
+  const gridBoats = data.boats.slice(gridStart, gridStart + GRID_PAGE_SIZE);
 
   return (
     <>
@@ -161,34 +177,67 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
         totalCount={data.total}
       />
 
-      {/* Other States Section */}
-      {otherStates.length > 0 && (
+      {/* Brag Board - Recent Catches */}
+      {bragPhotos.length > 0 && (
         <section className="bg-gray-50 border-b">
-          <div className="container mx-auto px-4 py-8">
-            <h2 className="text-lg font-display font-bold mb-3">
-              {sp.name} Fishing in Other States
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {otherStates.map((os) => (
-                <Link
-                  key={os.stateCode}
-                  href={`/species/${slug}/${os.stateSlug}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-full text-sm hover:border-primary hover:text-primary transition-colors"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {os.stateName}
-                </Link>
+          <div className="container mx-auto px-4 py-10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-display font-bold flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Recent {sp.name} Catches
+              </h2>
+              <Link
+                href="/brag-board"
+                className="text-sm text-primary hover:underline font-medium"
+              >
+                See All Catches
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {bragPhotos.map(({ photo, boatName, boatSlug }) => (
+                <Card key={photo.id} className="group overflow-hidden pt-0 gap-0">
+                  <div className="relative aspect-square overflow-hidden bg-muted">
+                    <Image
+                      src={formatImageUrl(photo.photoUrl)}
+                      alt={photo.catchDescription}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-medium line-clamp-2 mb-1">
+                      {photo.catchDescription}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{photo.submitterName}</span>
+                      <Link
+                        href={`/boats/${boatSlug}`}
+                        className="text-primary hover:underline truncate ml-2"
+                      >
+                        {boatName}
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
               ))}
             </div>
           </div>
         </section>
       )}
 
+      {/* Fishing Season Calendar */}
+      <FishingSeasonCalendar
+        speciesName={sp.name}
+        stateName={st.name}
+        seasons={seasonData}
+      />
+
       {/* About Section - SEO Content */}
       {(stateContent?.content || sp.description || stateContent?.bestSeason || stateContent?.popularPorts) && (
         <section className="bg-white border-b">
           <div className="container mx-auto px-4 py-10">
-            <div className="max-w-3xl mx-auto space-y-4">
+            <div className="space-y-4">
               <h2 className="text-xl font-display font-bold">
                 About {sp.name} Fishing in {st.name}
               </h2>
@@ -240,8 +289,43 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
         </section>
       )}
 
-      {/* All Boats Grid */}
+      {/* Other States + All Boats */}
       <div id="all-boats" className="container mx-auto px-4 py-12">
+        {/* Other States */}
+        {otherStates.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-lg font-display font-bold mb-4">
+              {sp.name} Fishing in Other States
+            </h2>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+              {otherStates.map((os) => (
+                <Link
+                  key={os.stateCode}
+                  href={`/species/${slug}/${os.stateSlug}`}
+                  className="group relative rounded-lg overflow-hidden border hover:shadow-md transition-all"
+                >
+                  <div className="aspect-[3/2] relative">
+                    <Image
+                      src={`https://flagcdn.com/w160/us-${os.stateCode.toLowerCase()}.png`}
+                      alt={`${os.stateName} flag`}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 12.5vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                    <div className="absolute bottom-0 inset-x-0 p-2">
+                      <p className="text-white font-semibold text-xs drop-shadow-sm truncate">
+                        {os.stateName}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Boats Grid */}
         <h2 className="text-2xl font-display font-bold mb-6">
           All {sp.name} Charters in {st.name}
           <span className="text-muted-foreground font-normal text-lg ml-2">
@@ -249,19 +333,19 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
           </span>
         </h2>
 
-        {data.boats.length > 0 ? (
+        {gridBoats.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.boats.map((boat) => (
+              {gridBoats.map((boat) => (
                 <BoatCard key={boat.id} boat={boat} tierBadge={tierBadges.get(boat.operatorId!) || null} />
               ))}
             </div>
 
-            {data.totalPages > 1 && (
+            {totalGridPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 {currentPage > 1 && (
                   <Link
-                    href={`/species/${slug}/${stateSlug}?page=${currentPage - 1}`}
+                    href={`/species/${slug}/${stateSlug}?page=${currentPage - 1}#all-boats`}
                     className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
                   >
                     <ChevronRight className="h-4 w-4 rotate-180" />
@@ -269,11 +353,11 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
                   </Link>
                 )}
                 <span className="text-sm text-muted-foreground px-4">
-                  Page {currentPage} of {data.totalPages}
+                  Page {currentPage} of {totalGridPages}
                 </span>
-                {currentPage < data.totalPages && (
+                {currentPage < totalGridPages && (
                   <Link
-                    href={`/species/${slug}/${stateSlug}?page=${currentPage + 1}`}
+                    href={`/species/${slug}/${stateSlug}?page=${currentPage + 1}#all-boats`}
                     className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-50"
                   >
                     Next

@@ -3,6 +3,8 @@ import { adminGuard } from "@/lib/auth/admin-guard";
 import {
   adminGetBragBoardPhotos,
   adminUpdateBragBoardPhoto,
+  adminGetBragBoardPhotoSpecies,
+  adminUpdateBragBoardPhotoDetails,
 } from "@/lib/db/queries/admin";
 import { Resend } from "resend";
 import { buildPhotoApprovedEmail } from "@/lib/email/templates";
@@ -18,7 +20,15 @@ export async function GET() {
   if (error) return error;
 
   const photos = await adminGetBragBoardPhotos();
-  return NextResponse.json(photos);
+  const photoIds = photos.map((p) => p.id);
+  const speciesMap = await adminGetBragBoardPhotoSpecies(photoIds);
+
+  const photosWithSpecies = photos.map((p) => ({
+    ...p,
+    species: speciesMap.get(p.id) || [],
+  }));
+
+  return NextResponse.json(photosWithSpecies);
 }
 
 export async function PUT(request: NextRequest) {
@@ -62,6 +72,30 @@ export async function PUT(request: NextRequest) {
         })
         .catch(() => {});
     }
+  }
+
+  return NextResponse.json(result);
+}
+
+export async function PATCH(request: NextRequest) {
+  const { error } = await adminGuard();
+  if (error) return error;
+
+  const body = await request.json();
+
+  const { adminBragBoardEditSchema } = await import("@/lib/validations");
+  const parsed = adminBragBoardEditSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message || "Invalid request" },
+      { status: 400 }
+    );
+  }
+
+  const { photoId, ...updates } = parsed.data;
+  const result = await adminUpdateBragBoardPhotoDetails(photoId, updates);
+  if (!result) {
+    return NextResponse.json({ error: "Photo not found" }, { status: 404 });
   }
 
   return NextResponse.json(result);

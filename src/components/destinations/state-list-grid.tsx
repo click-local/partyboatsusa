@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Ship } from "lucide-react";
+import Image from "next/image";
 
 interface StateMapData {
   code: string;
@@ -16,43 +16,35 @@ interface StateListGridProps {
 
 export function StateListGrid({ states }: StateListGridProps) {
   const activeStates = states.filter((s) => s.boatCount > 0);
-  const inactiveStates = states.filter((s) => s.boatCount === 0);
 
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {activeStates.map((state) => (
-          <Link
-            key={state.code}
-            href={`/states/${state.slug}`}
-            className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-white hover:border-primary/30 hover:shadow-card transition-all duration-200 group"
-          >
-            <div className="flex items-center gap-3">
-              <Ship className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {activeStates.map((state) => (
+        <Link
+          key={state.code}
+          href={`/states/${state.slug}`}
+          className="group relative rounded-xl overflow-hidden border hover:shadow-md transition-all duration-200"
+        >
+          <div className="aspect-[3/2] relative">
+            <Image
+              src={`https://flagcdn.com/w320/us-${state.code.toLowerCase()}.png`}
+              alt={`${state.name} state flag`}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+            <div className="absolute bottom-0 inset-x-0 p-3">
+              <p className="text-white font-semibold text-sm drop-shadow-sm">
                 {state.name}
-              </span>
+              </p>
+              <p className="text-white/80 text-xs">
+                {state.boatCount} {state.boatCount === 1 ? "boat" : "boats"}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {state.boatCount}
-              </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {inactiveStates.length > 0 && (
-        <div className="mt-8">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            Coming Soon
-          </p>
-          <p className="text-sm text-muted-foreground/70">
-            {inactiveStates.map((s) => s.name).join(", ")}
-          </p>
-        </div>
-      )}
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

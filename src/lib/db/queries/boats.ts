@@ -645,13 +645,14 @@ export async function getStatesForSpecies(speciesSlug: string) {
       .select({
         stateName: states.name,
         stateSlug: states.slug,
+        stateCode: states.code,
         boatCount: sql<number>`count(DISTINCT ${boats.id})`.as("boat_count"),
       })
       .from(boatSpecies)
       .innerJoin(boats, and(eq(boatSpecies.boatId, boats.id), eq(boats.isPublished, true)))
       .innerJoin(states, eq(boats.stateCode, states.code))
       .where(eq(boatSpecies.speciesId, sp.id))
-      .groupBy(states.name, states.slug)
+      .groupBy(states.name, states.slug, states.code)
       .orderBy(states.name);
   } catch {
     return [];

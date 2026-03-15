@@ -15,7 +15,11 @@ import { ReviewSection } from "@/components/review-section";
 import { getBoatBySlug, getNearbyBoats, getFleetBoats, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getReviewsByBoat, getBoatRatingStats } from "@/lib/db/queries/reviews";
 import { getBragBoardPhotosByBoat } from "@/lib/db/queries/brag-board";
+import { BragBoardFormDialog } from "@/components/brag-board-form-dialog";
 import { BoatLocationMap } from "@/components/map/boat-location-map";
+import { db } from "@/lib/db";
+import { boats as boatsTable, species } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
 import { formatImageUrl, formatPrice } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -67,7 +71,7 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
 
   const isUnclaimed = !boat.operatorId;
 
-  const [reviewData, ratingStats, nearbyBoats, fleetBoats, bragPhotos] = await Promise.all([
+  const [reviewData, ratingStats, nearbyBoats, fleetBoats, bragPhotos, boatsForSelect, speciesList] = await Promise.all([
     getReviewsByBoat(boat.id),
     getBoatRatingStats(boat.id),
     boat.latitude && boat.longitude
@@ -77,6 +81,20 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
       ? getFleetBoats(boat.operatorId, boat.id)
       : Promise.resolve([]),
     getBragBoardPhotosByBoat(boat.id, 1, 8),
+    db
+      .select({
+        id: boatsTable.id,
+        name: boatsTable.name,
+        cityName: boatsTable.cityName,
+        stateCode: boatsTable.stateCode,
+      })
+      .from(boatsTable)
+      .where(eq(boatsTable.isPublished, true))
+      .orderBy(asc(boatsTable.name)),
+    db
+      .select({ id: species.id, name: species.name })
+      .from(species)
+      .orderBy(asc(species.name)),
   ]);
 
   // Filter out fleet boats from nearby boats to avoid duplicates
@@ -560,9 +578,15 @@ export default async function BoatDetailPage({ params, searchParams }: Props) {
                   <p className="text-muted-foreground mt-1">Recent catches from this boat</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href={`/brag-board?boat=${boat.id}`}>
-                    <Button variant="outline" size="sm">Share Your Catch</Button>
-                  </Link>
+                  <BragBoardFormDialog
+                    boats={boatsForSelect}
+                    speciesList={speciesList}
+                    preselectedBoatId={boat.id}
+                  >
+                    <span className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                      Share Your Catch
+                    </span>
+                  </BragBoardFormDialog>
                   <Link href="/brag-board">
                     <Button variant="outline" size="sm">View All Catches</Button>
                   </Link>
