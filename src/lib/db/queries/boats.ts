@@ -156,11 +156,16 @@ export async function searchBoats(filters: SearchFilters) {
   };
 }
 
-export async function getBoatBySlug(slug: string) {
+export async function getBoatBySlug(slug: string, options?: { allowUnpublished?: boolean }) {
+  const conditions = [eq(boats.slug, slug)];
+  if (!options?.allowUnpublished) {
+    conditions.push(eq(boats.isPublished, true));
+  }
+
   const [boat] = await db
     .select()
     .from(boats)
-    .where(eq(boats.slug, slug));
+    .where(and(...conditions));
 
   if (!boat) return null;
 

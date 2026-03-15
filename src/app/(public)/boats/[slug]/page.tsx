@@ -25,11 +25,14 @@ export const revalidate = 1800;
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const boat = await getBoatBySlug(slug);
+  const { preview } = await searchParams;
+  const isPreview = preview === "true";
+  const boat = await getBoatBySlug(slug, { allowUnpublished: isPreview });
   if (!boat) return { title: "Boat Not Found" };
 
   const title = boat.seoTitle || `${boat.name} - Party Boat Fishing in ${boat.cityName}, ${boat.stateCode}`;
@@ -55,9 +58,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BoatDetailPage({ params }: Props) {
+export default async function BoatDetailPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const boat = await getBoatBySlug(slug);
+  const { preview } = await searchParams;
+  const isPreview = preview === "true";
+  const boat = await getBoatBySlug(slug, { allowUnpublished: isPreview });
   if (!boat) notFound();
 
   const isUnclaimed = !boat.operatorId;
@@ -150,6 +155,11 @@ export default async function BoatDetailPage({ params }: Props) {
 
   return (
     <div className="pb-20 lg:pb-0">
+      {isPreview && !boat.isPublished && (
+        <div className="bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium">
+          Preview Mode - This listing is not published and is only visible via this preview link
+        </div>
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

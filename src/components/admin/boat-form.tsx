@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Loader2, X, Plus } from "lucide-react";
+import { Save, Loader2, X, Plus, Eye } from "lucide-react";
 import { SpeciesSelect } from "@/components/species-select";
+import { ImageManager } from "./image-manager";
 
 export interface BoatData {
   name: string;
@@ -87,7 +88,6 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
   const [tripTypes, setTripTypes] = useState<TripType[]>([]);
   const [amenitiesList, setAmenitiesList] = useState<Amenity[]>([]);
   const [states, setStates] = useState<State[]>([]);
-  const [newGalleryUrl, setNewGalleryUrl] = useState("");
   const [newIncluded, setNewIncluded] = useState("");
   const [newExtra, setNewExtra] = useState("");
 
@@ -136,6 +136,44 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+      {/* Status Bar */}
+      <section className={`rounded-xl border-2 p-4 flex flex-wrap items-center justify-between gap-4 ${data.isPublished ? "bg-green-50 border-green-300" : "bg-amber-50 border-amber-300"}`}>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => set("isPublished", !data.isPublished)}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${data.isPublished ? "bg-green-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${data.isPublished ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+          <div>
+            <span className={`text-sm font-semibold ${data.isPublished ? "text-green-800" : "text-amber-800"}`}>
+              {data.isPublished ? "Published" : "Unpublished"}
+            </span>
+            <p className={`text-xs ${data.isPublished ? "text-green-600" : "text-amber-600"}`}>
+              {data.isPublished ? "This listing is live and visible to the public" : "This listing is hidden from the public"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border cursor-pointer ${data.isFeaturedAdmin ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200 text-gray-600"}`}>
+            <input type="checkbox" checked={data.isFeaturedAdmin} onChange={(e) => set("isFeaturedAdmin", e.target.checked)} className="sr-only" />
+            {data.isFeaturedAdmin ? "Featured" : "Not Featured"}
+          </label>
+          {data.slug && (
+            <a
+              href={`/boats/${data.slug}?preview=true`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <Eye className="h-4 w-4" />
+              Preview
+            </a>
+          )}
+        </div>
+      </section>
+
       {/* Basic Info */}
       <section className="bg-white rounded-xl border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Basic Information</h2>
@@ -284,38 +322,15 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
       </section>
 
       {/* Images */}
-      <section className="bg-white rounded-xl border p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Images</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
-          <input value={data.primaryImageUrl} onChange={(e) => set("primaryImageUrl", e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm" />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Focal Point X (%)</label>
-            <input type="number" min={0} max={100} value={data.imageFocalPointX} onChange={(e) => set("imageFocalPointX", Number(e.target.value))} className="w-full border rounded-lg px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Focal Point Y (%)</label>
-            <input type="number" min={0} max={100} value={data.imageFocalPointY} onChange={(e) => set("imageFocalPointY", Number(e.target.value))} className="w-full border rounded-lg px-3 py-2 text-sm" />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
-          <div className="space-y-2">
-            {data.galleryImageUrls.map((url, i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input type="text" value={url} readOnly className="flex-1 border rounded-lg px-3 py-2 text-sm bg-gray-50" />
-                <button type="button" onClick={() => removeArrayItem("galleryImageUrls", i)} className="text-red-500 hover:bg-red-50 rounded p-1.5 text-xs"><X className="h-3.5 w-3.5" /></button>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <input value={newGalleryUrl} onChange={(e) => setNewGalleryUrl(e.target.value)} placeholder="Add gallery image URL..." className="flex-1 border rounded-lg px-3 py-2 text-sm" />
-              <button type="button" onClick={() => addArrayItem("galleryImageUrls", newGalleryUrl, setNewGalleryUrl)} className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"><Plus className="h-4 w-4" /></button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ImageManager
+        primaryImageUrl={data.primaryImageUrl}
+        imageFocalPointX={data.imageFocalPointX}
+        imageFocalPointY={data.imageFocalPointY}
+        galleryImageUrls={data.galleryImageUrls}
+        onPrimaryImageChange={(url) => set("primaryImageUrl", url)}
+        onFocalPointChange={(x, y) => { set("imageFocalPointX", x); set("imageFocalPointY", y); }}
+        onGalleryChange={(urls) => set("galleryImageUrls", urls)}
+      />
 
       {/* Trip Types & Amenities */}
       <section className="bg-white rounded-xl border p-6 space-y-4">
@@ -381,21 +396,6 @@ export function AdminBoatForm({ initialData, onSave, saving }: {
             <input value={newExtra} onChange={(e) => setNewExtra(e.target.value)} placeholder="Add extra..." className="flex-1 border rounded-lg px-3 py-2 text-sm" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addArrayItem("availableExtras", newExtra, setNewExtra); }}} />
             <button type="button" onClick={() => addArrayItem("availableExtras", newExtra, setNewExtra)} className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"><Plus className="h-4 w-4" /></button>
           </div>
-        </div>
-      </section>
-
-      {/* Status Flags */}
-      <section className="bg-white rounded-xl border p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Status</h2>
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={data.isPublished} onChange={(e) => set("isPublished", e.target.checked)} className="rounded" />
-            Published
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={data.isFeaturedAdmin} onChange={(e) => set("isFeaturedAdmin", e.target.checked)} className="rounded" />
-            Featured
-          </label>
         </div>
       </section>
 
