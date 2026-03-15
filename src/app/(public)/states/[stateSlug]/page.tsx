@@ -9,6 +9,7 @@ import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-page
 import { formatImageUrl } from "@/lib/utils";
 import { ContentBlockRenderer } from "@/components/content-blocks";
 import { StateBoatsMap } from "@/components/map/state-boats-map";
+import { stateSEOContent } from "@/data/state-seo-content";
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
@@ -227,6 +228,24 @@ export default async function StatePage({ params, searchParams }: Props) {
           </section>
         )}
       </div>
+
+      {/* SEO Content Sections */}
+      {stateSEOContent[stateSlug] && (
+        <div className="container mx-auto px-4 pb-12">
+          <div className="prose prose-gray max-w-none">
+            {stateSEOContent[stateSlug].sections.map((section, i) => (
+              <section key={i} className={i === 0 ? "pt-10 border-t" : "mt-10"}>
+                <h2 className="text-2xl font-display font-bold mb-4 not-prose">
+                  {section.heading}
+                </h2>
+                <div className="space-y-4 text-gray-700 leading-relaxed">
+                  {section.body}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Fishing Ports - city cross-links */}
       {stateCities.length > 0 && (

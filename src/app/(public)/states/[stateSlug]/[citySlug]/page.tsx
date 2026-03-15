@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
-import { ChevronRight, Ship, Fish, DollarSign, Users, Anchor } from "lucide-react";
+import { ChevronRight, Ship, Fish, DollarSign, Users } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
 import { FeaturedBoatCard } from "@/components/featured-boat-card";
 import { ContentBlockRenderer } from "@/components/content-blocks";
@@ -101,7 +101,7 @@ export default async function CityPage({ params, searchParams }: Props) {
 
   const {
     state, city, boats: boatList, total, totalPages,
-    species: citySpecies, amenities: cityAmenities,
+    species: citySpecies,
     priceRange, capacityRange, ratingStats, nearbyCities,
   } = data;
 
@@ -297,66 +297,6 @@ export default async function CityPage({ params, searchParams }: Props) {
                   </div>
                 </Link>
               ))}
-            </div>
-          </section>
-        )}
-
-        {/* Amenities Section */}
-        {cityAmenities.length > 0 && (
-          <section className="mt-14 pt-10 border-t">
-            <h2 className="text-2xl font-display font-bold mb-6">
-              Amenities and Onboard Features
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {cityAmenities.map((am) => (
-                <div
-                  key={am.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-gray-50/50"
-                >
-                  <span className="text-xl">{am.icon}</span>
-                  <span className="text-sm font-medium">{am.name}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Pricing Overview */}
-        {priceRange && (
-          <section className="mt-14 pt-10 border-t">
-            <div className="bg-primary/5 border border-primary/10 rounded-xl p-6 md:p-8">
-              <h2 className="text-xl font-display font-bold mb-3">
-                Pricing in {city.name}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground mb-1">Price range</p>
-                  <p className="font-semibold text-lg">
-                    {priceRange.min === priceRange.max
-                      ? `$${priceRange.min}/person`
-                      : `$${priceRange.min} - $${priceRange.max}/person`}
-                  </p>
-                </div>
-                {capacityRange && (
-                  <div>
-                    <p className="text-muted-foreground mb-1">Boat capacity</p>
-                    <p className="font-semibold text-lg">
-                      {capacityRange.min === capacityRange.max
-                        ? `Up to ${capacityRange.max} guests`
-                        : `${capacityRange.min} - ${capacityRange.max} guests`}
-                    </p>
-                  </div>
-                )}
-                {ratingStats.totalReviews > 0 && (
-                  <div>
-                    <p className="text-muted-foreground mb-1">Reviews</p>
-                    <p className="font-semibold text-lg">
-                      {ratingStats.avg > 0 ? `${ratingStats.avg.toFixed(1)} avg rating, ` : ""}
-                      {ratingStats.totalReviews} review{ratingStats.totalReviews !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                )}
-              </div>
             </div>
           </section>
         )}
