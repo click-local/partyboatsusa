@@ -15,6 +15,12 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/search`,
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Search Party Boats | Find Fishing Charters Near You",
+    description:
+      "Search and compare party boat fishing charters across the United States. Filter by location, amenities, price, capacity, and ratings.",
+  },
 };
 
 export default function SearchLayout({
@@ -44,6 +50,7 @@ export default function SearchLayout({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
       {children}
     </>
   );

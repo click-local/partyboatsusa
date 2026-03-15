@@ -5,6 +5,8 @@ import { USStatesMap } from "@/components/map/us-states-map";
 import { StateListGrid } from "@/components/destinations/state-list-grid";
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
+
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Fishing Destinations - Party Boat Charters by State | PartyBoatsUSA",
     description: "Explore party boat fishing destinations across the United States. Find charters by state and city.",
-    url: "/destinations",
+    url: `${SITE_URL}/destinations`,
   },
   twitter: {
     card: "summary_large_image",

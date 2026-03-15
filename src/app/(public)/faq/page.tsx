@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/accordion";
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com";
+
 interface FaqCategory {
   title: string;
   faqs: { question: string; answer: React.ReactNode }[];
@@ -196,7 +198,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FAQ - Party Boat Fishing Questions | PartyBoatsUSA",
     description: "Find answers to common questions about party boat fishing, trip costs, what to bring, tipping, booking, and more.",
-    url: "/faq",
+    url: `${SITE_URL}/faq`,
   },
   twitter: {
     card: "summary_large_image",
@@ -232,8 +234,8 @@ export default function FaqPage() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://partyboatsusa.com" },
-              { "@type": "ListItem", position: 2, name: "FAQ", item: "https://partyboatsusa.com/faq" },
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "FAQ", item: `${SITE_URL}/faq` },
             ],
           }),
         }}

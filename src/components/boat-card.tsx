@@ -23,7 +23,7 @@ export function BoatCard({ boat, tierBadge }: BoatCardProps) {
         {boat.primaryImageUrl ? (
           <Image
             src={imageUrl}
-            alt={boat.name}
+            alt={`${boat.name} - party boat fishing in ${boat.cityName}, ${boat.stateCode}`}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

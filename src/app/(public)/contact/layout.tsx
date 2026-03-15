@@ -16,6 +16,12 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/contact`,
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact Party Boats USA",
+    description:
+      "Get in touch with Party Boats USA. Contact us about listing your charter boat, partnerships, or general inquiries.",
+  },
 };
 
 export default function ContactLayout({

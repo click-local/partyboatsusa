@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { BoatCard } from "@/components/boat-card";
-import { getStateBySlug } from "@/lib/db/queries/states";
+import { getStateBySlug, getCitiesForState } from "@/lib/db/queries/states";
 import { getBoatsByState, getTierBadgesForBoats } from "@/lib/db/queries/boats";
 import { getDestinationPageByStateSlug } from "@/lib/db/queries/destination-pages";
 import { formatImageUrl } from "@/lib/utils";
@@ -16,9 +16,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://partyboatsusa.com"
 export const revalidate = 1800;
 
 export async function generateStaticParams() {
-  const { getStates } = await import("@/lib/db/queries/states");
-  const allStates = await getStates();
-  return allStates.map((s) => ({ stateSlug: s.slug }));
+  const { getStatesWithListings } = await import("@/lib/db/queries/states");
+  const statesWithBoats = await getStatesWithListings();
+  return statesWithBoats.map((row) => ({ stateSlug: row.state.slug }));
 }
 
 interface Props {
@@ -76,9 +76,10 @@ export default async function StatePage({ params, searchParams }: Props) {
   const state = await getStateBySlug(stateSlug);
   if (!state) notFound();
 
-  const [destPage, boatData] = await Promise.all([
+  const [destPage, boatData, stateCities] = await Promise.all([
     getDestinationPageByStateSlug(stateSlug),
     getBoatsByState(state.code, currentPage, 50),
+    getCitiesForState(state.code),
   ]);
 
   const tierBadges = await getTierBadgesForBoats(boatData.boats.map((b) => b.operatorId));
@@ -100,7 +101,19 @@ export default async function StatePage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* Hero -Google Map with boat markers */}
+      {/* Page H1 - always rendered for SEO */}
+      <div className="bg-primary text-white py-4">
+        <div className="container mx-auto px-4">
+          <h1 className="text-2xl md:text-3xl font-display font-bold">
+            {destPage?.heroHeadline || `Party Boat Fishing in ${state.name}`}
+          </h1>
+          <p className="text-blue-100 text-sm mt-1">
+            {destPage?.heroSubheadline || `${boatData.total} party boat charters in ${state.name}`}
+          </p>
+        </div>
+      </div>
+
+      {/* Hero - Google Map with boat markers or image fallback */}
       {(() => {
         const mappableBoats = boatData.boats
           .filter((b) => b.latitude && b.longitude)
@@ -126,10 +139,9 @@ export default async function StatePage({ params, searchParams }: Props) {
           );
         }
 
-        // Fallback hero if no boats have coordinates
-        return (
-          <section className="relative bg-primary text-white py-16">
-            {heroImage && (
+        if (heroImage) {
+          return (
+            <section className="relative bg-primary text-white py-16">
               <Image
                 src={formatImageUrl(heroImage)}
                 alt={`Fishing in ${state.name}`}
@@ -138,19 +150,12 @@ export default async function StatePage({ params, searchParams }: Props) {
                 priority
                 sizes="100vw"
               />
-            )}
-            <div className="absolute inset-0 bg-primary/70" />
-            <div className="relative container mx-auto px-4 text-center">
-              <h1 className="text-3xl md:text-5xl font-display font-bold mb-3">
-                {destPage?.heroHeadline || `Party Boat Fishing in ${state.name}`}
-              </h1>
-              <p className="text-blue-100 text-lg max-w-2xl mx-auto">
-                {destPage?.heroSubheadline ||
-                  `Discover ${boatData.total} party boat charters in ${state.name}`}
-              </p>
-            </div>
-          </section>
-        );
+              <div className="absolute inset-0 bg-primary/70" />
+            </section>
+          );
+        }
+
+        return null;
       })()}
 
       <div className="container mx-auto px-4 py-12">
@@ -222,6 +227,28 @@ export default async function StatePage({ params, searchParams }: Props) {
           </section>
         )}
       </div>
+
+      {/* Fishing Ports - city cross-links */}
+      {stateCities.length > 0 && (
+        <div className="container mx-auto px-4 pb-12">
+          <section className="pt-10 border-t">
+            <h2 className="text-xl font-display font-bold mb-5">
+              Fishing Ports in {state.name}
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {stateCities.map((c) => (
+                <Link
+                  key={c.citySlug}
+                  href={`/states/${stateSlug}/${c.citySlug}`}
+                  className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-primary hover:text-white hover:border-primary transition-colors"
+                >
+                  {c.cityName}
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* BreadcrumbList JSON-LD */}
       <script
