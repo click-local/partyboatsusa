@@ -226,12 +226,12 @@ export default async function SpeciesStatePage({ params, searchParams }: Props) 
         </section>
       )}
 
-      {/* Fishing Season Calendar */}
-      <FishingSeasonCalendar
+      {/* Fishing Season Calendar - hidden until Fish Rules API integration verifies accuracy */}
+      {/* <FishingSeasonCalendar
         speciesName={sp.name}
         stateName={st.name}
-        seasons={seasonData}
-      />
+        regionSeasons={seasonData}
+      /> */}
 
       {/* About Section - SEO Content */}
       {(stateContent?.content || sp.description || stateContent?.bestSeason || stateContent?.popularPorts) && (

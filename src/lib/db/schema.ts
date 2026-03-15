@@ -88,9 +88,11 @@ export const speciesStateSeasons = pgTable("species_state_seasons", {
   id: serial("id").primaryKey(),
   speciesId: integer("species_id").notNull().references(() => species.id, { onDelete: "cascade" }),
   stateCode: text("state_code").notNull(),
+  region: text("region"),           // e.g. "Gulf Coast", "Atlantic Coast" (null = statewide)
   month: integer("month").notNull(),
-  rating: text("rating").notNull(),
+  rating: text("rating").notNull(), // peak, good, fair, off, closed
   notes: text("notes"),
+  seasonYear: integer("season_year"), // tracks which year's regulations apply
 });
 
 export type SelectSpeciesStateSeason = typeof speciesStateSeasons.$inferSelect;
